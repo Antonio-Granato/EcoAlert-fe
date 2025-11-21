@@ -10,10 +10,8 @@ import 'package:dio/dio.dart';
 import 'package:openapi/src/api_util.dart';
 import 'package:openapi/src/model/commento_input.dart';
 import 'package:openapi/src/model/commento_output.dart';
-import 'package:openapi/src/model/error.dart';
 
 class CommentiApi {
-
   final Dio _dio;
 
   final Serializers _serializers;
@@ -24,9 +22,9 @@ class CommentiApi {
   /// Cittadini o enti possono aggiungere commenti solo alle segnalazioni associate ai loro ID.
   ///
   /// Parameters:
-  /// * [id] 
-  /// * [idSegnalazione] 
-  /// * [commentoInput] 
+  /// * [id]
+  /// * [idSegnalazione]
+  /// * [commentoInput]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -36,7 +34,7 @@ class CommentiApi {
   ///
   /// Returns a [Future] containing a [Response] with a [CommentoOutput] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<CommentoOutput>> createCommento({ 
+  Future<Response<CommentoOutput>> createCommento({
     required int id,
     required int idSegnalazione,
     required CommentoInput commentoInput,
@@ -47,7 +45,16 @@ class CommentiApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/user/{id}/segnalazione/{idSegnalazione}/commenti'.replaceAll('{' r'id' '}', encodeQueryParameter(_serializers, id, const FullType(int)).toString()).replaceAll('{' r'idSegnalazione' '}', encodeQueryParameter(_serializers, idSegnalazione, const FullType(int)).toString());
+    final _path = r'/user/{id}/segnalazione/{idSegnalazione}/commenti'
+        .replaceAll(
+            '{' r'id' '}',
+            encodeQueryParameter(_serializers, id, const FullType(int))
+                .toString())
+        .replaceAll(
+            '{' r'idSegnalazione' '}',
+            encodeQueryParameter(
+                    _serializers, idSegnalazione, const FullType(int))
+                .toString());
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
@@ -66,10 +73,9 @@ class CommentiApi {
     try {
       const _type = FullType(CommentoInput);
       _bodyData = _serializers.serialize(commentoInput, specifiedType: _type);
-
-    } catch(error, stackTrace) {
+    } catch (error, stackTrace) {
       throw DioException(
-         requestOptions: _options.compose(
+        requestOptions: _options.compose(
           _dio.options,
           _path,
         ),
@@ -92,11 +98,12 @@ class CommentiApi {
 
     try {
       final rawResponse = _response.data;
-      _responseData = rawResponse == null ? null : _serializers.deserialize(
-        rawResponse,
-        specifiedType: const FullType(CommentoOutput),
-      ) as CommentoOutput;
-
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(
+              rawResponse,
+              specifiedType: const FullType(CommentoOutput),
+            ) as CommentoOutput;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -120,12 +127,12 @@ class CommentiApi {
   }
 
   /// Elimina un commento da una segnalazione
-  /// L&#39;utente può eliminare solo i propri commenti sotto la segnalazione. 
+  /// L&#39;utente può eliminare solo i propri commenti sotto la segnalazione.
   ///
   /// Parameters:
-  /// * [id] 
-  /// * [idSegnalazione] 
-  /// * [idCommento] 
+  /// * [id]
+  /// * [idSegnalazione]
+  /// * [idCommento]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -135,7 +142,7 @@ class CommentiApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> deleteCommento({ 
+  Future<Response<void>> deleteCommento({
     required int id,
     required int idSegnalazione,
     required int idCommento,
@@ -146,7 +153,22 @@ class CommentiApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/user/{id}/segnalazione/{idSegnalazione}/commenti/{idCommento}'.replaceAll('{' r'id' '}', encodeQueryParameter(_serializers, id, const FullType(int)).toString()).replaceAll('{' r'idSegnalazione' '}', encodeQueryParameter(_serializers, idSegnalazione, const FullType(int)).toString()).replaceAll('{' r'idCommento' '}', encodeQueryParameter(_serializers, idCommento, const FullType(int)).toString());
+    final _path =
+        r'/user/{id}/segnalazione/{idSegnalazione}/commenti/{idCommento}'
+            .replaceAll(
+                '{' r'id' '}',
+                encodeQueryParameter(_serializers, id, const FullType(int))
+                    .toString())
+            .replaceAll(
+                '{' r'idSegnalazione' '}',
+                encodeQueryParameter(
+                        _serializers, idSegnalazione, const FullType(int))
+                    .toString())
+            .replaceAll(
+                '{' r'idCommento' '}',
+                encodeQueryParameter(
+                        _serializers, idCommento, const FullType(int))
+                    .toString());
     final _options = Options(
       method: r'DELETE',
       headers: <String, dynamic>{
@@ -169,5 +191,4 @@ class CommentiApi {
 
     return _response;
   }
-
 }

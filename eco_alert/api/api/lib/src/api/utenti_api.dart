@@ -9,12 +9,10 @@ import 'package:dio/dio.dart';
 
 import 'package:built_collection/built_collection.dart';
 import 'package:openapi/src/api_util.dart';
-import 'package:openapi/src/model/error.dart';
 import 'package:openapi/src/model/segnalazione_output.dart';
 import 'package:openapi/src/model/utente_dettaglio_output.dart';
 
 class UtentiApi {
-
   final Dio _dio;
 
   final Serializers _serializers;
@@ -22,7 +20,7 @@ class UtentiApi {
   const UtentiApi(this._dio, this._serializers);
 
   /// Ottiene il dettaglio di una segnalazione
-  /// Restituisce una segnalazione specifica. - Un cittadino può vedere solo le proprie segnalazioni. - Un ente può vedere solo le segnalazioni associate a sé. 
+  /// Restituisce una segnalazione specifica. - Un cittadino può vedere solo le proprie segnalazioni. - Un ente può vedere solo le segnalazioni associate a sé.
   ///
   /// Parameters:
   /// * [id] - ID dell'utente
@@ -36,7 +34,7 @@ class UtentiApi {
   ///
   /// Returns a [Future] containing a [Response] with a [SegnalazioneOutput] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<SegnalazioneOutput>> getSegnalazioneById({ 
+  Future<Response<SegnalazioneOutput>> getSegnalazioneById({
     required int id,
     required int idSegnalazione,
     CancelToken? cancelToken,
@@ -46,7 +44,16 @@ class UtentiApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/user/{id}/segnalazioni/{idSegnalazione}'.replaceAll('{' r'id' '}', encodeQueryParameter(_serializers, id, const FullType(int)).toString()).replaceAll('{' r'idSegnalazione' '}', encodeQueryParameter(_serializers, idSegnalazione, const FullType(int)).toString());
+    final _path = r'/user/{id}/segnalazioni/{idSegnalazione}'
+        .replaceAll(
+            '{' r'id' '}',
+            encodeQueryParameter(_serializers, id, const FullType(int))
+                .toString())
+        .replaceAll(
+            '{' r'idSegnalazione' '}',
+            encodeQueryParameter(
+                    _serializers, idSegnalazione, const FullType(int))
+                .toString());
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
@@ -71,11 +78,12 @@ class UtentiApi {
 
     try {
       final rawResponse = _response.data;
-      _responseData = rawResponse == null ? null : _serializers.deserialize(
-        rawResponse,
-        specifiedType: const FullType(SegnalazioneOutput),
-      ) as SegnalazioneOutput;
-
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(
+              rawResponse,
+              specifiedType: const FullType(SegnalazioneOutput),
+            ) as SegnalazioneOutput;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -99,10 +107,10 @@ class UtentiApi {
   }
 
   /// Ottiene le segnalazioni associate all’utente
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [id] 
+  /// * [id]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -112,7 +120,7 @@ class UtentiApi {
   ///
   /// Returns a [Future] containing a [Response] with a [BuiltList<SegnalazioneOutput>] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<BuiltList<SegnalazioneOutput>>> getSegnalazioniByUserId({ 
+  Future<Response<BuiltList<SegnalazioneOutput>>> getSegnalazioniByUserId({
     required int id,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -121,7 +129,8 @@ class UtentiApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/user/{id}/segnalazioni'.replaceAll('{' r'id' '}', encodeQueryParameter(_serializers, id, const FullType(int)).toString());
+    final _path = r'/user/{id}/segnalazioni'.replaceAll('{' r'id' '}',
+        encodeQueryParameter(_serializers, id, const FullType(int)).toString());
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
@@ -146,11 +155,13 @@ class UtentiApi {
 
     try {
       final rawResponse = _response.data;
-      _responseData = rawResponse == null ? null : _serializers.deserialize(
-        rawResponse,
-        specifiedType: const FullType(BuiltList, [FullType(SegnalazioneOutput)]),
-      ) as BuiltList<SegnalazioneOutput>;
-
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(
+              rawResponse,
+              specifiedType:
+                  const FullType(BuiltList, [FullType(SegnalazioneOutput)]),
+            ) as BuiltList<SegnalazioneOutput>;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -174,10 +185,10 @@ class UtentiApi {
   }
 
   /// Ottiene i dettagli di un utente
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [id] 
+  /// * [id]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -187,7 +198,7 @@ class UtentiApi {
   ///
   /// Returns a [Future] containing a [Response] with a [UtenteDettaglioOutput] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<UtenteDettaglioOutput>> getUserById({ 
+  Future<Response<UtenteDettaglioOutput>> getUserById({
     required int id,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -196,7 +207,8 @@ class UtentiApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/user/{id}'.replaceAll('{' r'id' '}', encodeQueryParameter(_serializers, id, const FullType(int)).toString());
+    final _path = r'/user/{id}'.replaceAll('{' r'id' '}',
+        encodeQueryParameter(_serializers, id, const FullType(int)).toString());
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
@@ -221,11 +233,12 @@ class UtentiApi {
 
     try {
       final rawResponse = _response.data;
-      _responseData = rawResponse == null ? null : _serializers.deserialize(
-        rawResponse,
-        specifiedType: const FullType(UtenteDettaglioOutput),
-      ) as UtenteDettaglioOutput;
-
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(
+              rawResponse,
+              specifiedType: const FullType(UtenteDettaglioOutput),
+            ) as UtenteDettaglioOutput;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -247,5 +260,4 @@ class UtentiApi {
       extra: _response.extra,
     );
   }
-
 }

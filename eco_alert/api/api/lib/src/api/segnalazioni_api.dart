@@ -8,13 +8,11 @@ import 'package:built_value/serializer.dart';
 import 'package:dio/dio.dart';
 
 import 'package:openapi/src/api_util.dart';
-import 'package:openapi/src/model/error.dart';
 import 'package:openapi/src/model/segnalazione_input.dart';
 import 'package:openapi/src/model/segnalazione_output.dart';
 import 'package:openapi/src/model/segnalazione_update_input_ente.dart';
 
 class SegnalazioniApi {
-
   final Dio _dio;
 
   final Serializers _serializers;
@@ -22,11 +20,11 @@ class SegnalazioniApi {
   const SegnalazioniApi(this._dio, this._serializers);
 
   /// Crea una nuova segnalazione
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [id] 
-  /// * [segnalazioneInput] 
+  /// * [id]
+  /// * [segnalazioneInput]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -36,7 +34,7 @@ class SegnalazioniApi {
   ///
   /// Returns a [Future] containing a [Response] with a [SegnalazioneOutput] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<SegnalazioneOutput>> createSegnalazione({ 
+  Future<Response<SegnalazioneOutput>> createSegnalazione({
     required int id,
     required SegnalazioneInput segnalazioneInput,
     CancelToken? cancelToken,
@@ -46,7 +44,8 @@ class SegnalazioniApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/user/{id}/segnalazione'.replaceAll('{' r'id' '}', encodeQueryParameter(_serializers, id, const FullType(int)).toString());
+    final _path = r'/user/{id}/segnalazione'.replaceAll('{' r'id' '}',
+        encodeQueryParameter(_serializers, id, const FullType(int)).toString());
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
@@ -64,11 +63,11 @@ class SegnalazioniApi {
 
     try {
       const _type = FullType(SegnalazioneInput);
-      _bodyData = _serializers.serialize(segnalazioneInput, specifiedType: _type);
-
-    } catch(error, stackTrace) {
+      _bodyData =
+          _serializers.serialize(segnalazioneInput, specifiedType: _type);
+    } catch (error, stackTrace) {
       throw DioException(
-         requestOptions: _options.compose(
+        requestOptions: _options.compose(
           _dio.options,
           _path,
         ),
@@ -91,11 +90,12 @@ class SegnalazioniApi {
 
     try {
       final rawResponse = _response.data;
-      _responseData = rawResponse == null ? null : _serializers.deserialize(
-        rawResponse,
-        specifiedType: const FullType(SegnalazioneOutput),
-      ) as SegnalazioneOutput;
-
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(
+              rawResponse,
+              specifiedType: const FullType(SegnalazioneOutput),
+            ) as SegnalazioneOutput;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -119,11 +119,11 @@ class SegnalazioniApi {
   }
 
   /// Elimina una segnalazione appartenente al cittadino
-  /// Un cittadino può eliminare **solo** una sua segnalazione **non in stato di inserito**. Un ente non può eliminare alcuna segnalazione. 
+  /// Un cittadino può eliminare **solo** una sua segnalazione **non in stato di inserito**. Un ente non può eliminare alcuna segnalazione.
   ///
   /// Parameters:
-  /// * [id] 
-  /// * [idSegnalazione] 
+  /// * [id]
+  /// * [idSegnalazione]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -133,7 +133,7 @@ class SegnalazioniApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> deleteSegnalazione({ 
+  Future<Response<void>> deleteSegnalazione({
     required int id,
     required int idSegnalazione,
     CancelToken? cancelToken,
@@ -143,7 +143,16 @@ class SegnalazioniApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/user/{id}/segnalazioni/{idSegnalazione}'.replaceAll('{' r'id' '}', encodeQueryParameter(_serializers, id, const FullType(int)).toString()).replaceAll('{' r'idSegnalazione' '}', encodeQueryParameter(_serializers, idSegnalazione, const FullType(int)).toString());
+    final _path = r'/user/{id}/segnalazioni/{idSegnalazione}'
+        .replaceAll(
+            '{' r'id' '}',
+            encodeQueryParameter(_serializers, id, const FullType(int))
+                .toString())
+        .replaceAll(
+            '{' r'idSegnalazione' '}',
+            encodeQueryParameter(
+                    _serializers, idSegnalazione, const FullType(int))
+                .toString());
     final _options = Options(
       method: r'DELETE',
       headers: <String, dynamic>{
@@ -168,12 +177,12 @@ class SegnalazioniApi {
   }
 
   /// Modifica una segnalazione del cittadino
-  /// Un cittadino può modificare **solo le proprie segnalazioni non chiuse**. Solo il titolo, la descrizione, la latitudine, la longitudine e l&#39;ente associato possono essere aggiornati. 
+  /// Un cittadino può modificare **solo le proprie segnalazioni non chiuse**. Solo il titolo, la descrizione, la latitudine, la longitudine e l&#39;ente associato possono essere aggiornati.
   ///
   /// Parameters:
-  /// * [id] 
-  /// * [idSegnalazione] 
-  /// * [segnalazioneInput] 
+  /// * [id]
+  /// * [idSegnalazione]
+  /// * [segnalazioneInput]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -183,7 +192,7 @@ class SegnalazioniApi {
   ///
   /// Returns a [Future] containing a [Response] with a [SegnalazioneOutput] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<SegnalazioneOutput>> updateSegnalazione({ 
+  Future<Response<SegnalazioneOutput>> updateSegnalazione({
     required int id,
     required int idSegnalazione,
     required SegnalazioneInput segnalazioneInput,
@@ -194,7 +203,16 @@ class SegnalazioniApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/user/{id}/segnalazioni/{idSegnalazione}'.replaceAll('{' r'id' '}', encodeQueryParameter(_serializers, id, const FullType(int)).toString()).replaceAll('{' r'idSegnalazione' '}', encodeQueryParameter(_serializers, idSegnalazione, const FullType(int)).toString());
+    final _path = r'/user/{id}/segnalazioni/{idSegnalazione}'
+        .replaceAll(
+            '{' r'id' '}',
+            encodeQueryParameter(_serializers, id, const FullType(int))
+                .toString())
+        .replaceAll(
+            '{' r'idSegnalazione' '}',
+            encodeQueryParameter(
+                    _serializers, idSegnalazione, const FullType(int))
+                .toString());
     final _options = Options(
       method: r'PUT',
       headers: <String, dynamic>{
@@ -212,11 +230,11 @@ class SegnalazioniApi {
 
     try {
       const _type = FullType(SegnalazioneInput);
-      _bodyData = _serializers.serialize(segnalazioneInput, specifiedType: _type);
-
-    } catch(error, stackTrace) {
+      _bodyData =
+          _serializers.serialize(segnalazioneInput, specifiedType: _type);
+    } catch (error, stackTrace) {
       throw DioException(
-         requestOptions: _options.compose(
+        requestOptions: _options.compose(
           _dio.options,
           _path,
         ),
@@ -239,11 +257,12 @@ class SegnalazioniApi {
 
     try {
       final rawResponse = _response.data;
-      _responseData = rawResponse == null ? null : _serializers.deserialize(
-        rawResponse,
-        specifiedType: const FullType(SegnalazioneOutput),
-      ) as SegnalazioneOutput;
-
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(
+              rawResponse,
+              specifiedType: const FullType(SegnalazioneOutput),
+            ) as SegnalazioneOutput;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -267,12 +286,12 @@ class SegnalazioniApi {
   }
 
   /// Aggiorna lo stato e/o la ditta di una segnalazione
-  /// Permette a un ente di aggiornare lo stato di una segnalazione (da INSERITO a PRESO_IN_CARICO, SOSPESO o CHIUSO) e di inserire la ditta che risolve la segnalazione. 
+  /// Permette a un ente di aggiornare lo stato di una segnalazione (da INSERITO a PRESO_IN_CARICO, SOSPESO o CHIUSO) e di inserire la ditta che risolve la segnalazione.
   ///
   /// Parameters:
-  /// * [idSegnalazione] 
-  /// * [idEnte] 
-  /// * [segnalazioneUpdateInputEnte] 
+  /// * [idSegnalazione]
+  /// * [idEnte]
+  /// * [segnalazioneUpdateInputEnte]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -282,7 +301,7 @@ class SegnalazioniApi {
   ///
   /// Returns a [Future] containing a [Response] with a [SegnalazioneOutput] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<SegnalazioneOutput>> updateSegnalazioneEnte({ 
+  Future<Response<SegnalazioneOutput>> updateSegnalazioneEnte({
     required int idSegnalazione,
     required int idEnte,
     required SegnalazioneUpdateInputEnte segnalazioneUpdateInputEnte,
@@ -293,7 +312,10 @@ class SegnalazioniApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/segnalazioni/{idSegnalazione}/ente'.replaceAll('{' r'idSegnalazione' '}', encodeQueryParameter(_serializers, idSegnalazione, const FullType(int)).toString());
+    final _path = r'/segnalazioni/{idSegnalazione}/ente'.replaceAll(
+        '{' r'idSegnalazione' '}',
+        encodeQueryParameter(_serializers, idSegnalazione, const FullType(int))
+            .toString());
     final _options = Options(
       method: r'PUT',
       headers: <String, dynamic>{
@@ -308,18 +330,19 @@ class SegnalazioniApi {
     );
 
     final _queryParameters = <String, dynamic>{
-      r'idEnte': encodeQueryParameter(_serializers, idEnte, const FullType(int)),
+      r'idEnte':
+          encodeQueryParameter(_serializers, idEnte, const FullType(int)),
     };
 
     dynamic _bodyData;
 
     try {
       const _type = FullType(SegnalazioneUpdateInputEnte);
-      _bodyData = _serializers.serialize(segnalazioneUpdateInputEnte, specifiedType: _type);
-
-    } catch(error, stackTrace) {
+      _bodyData = _serializers.serialize(segnalazioneUpdateInputEnte,
+          specifiedType: _type);
+    } catch (error, stackTrace) {
       throw DioException(
-         requestOptions: _options.compose(
+        requestOptions: _options.compose(
           _dio.options,
           _path,
           queryParameters: _queryParameters,
@@ -344,11 +367,12 @@ class SegnalazioniApi {
 
     try {
       final rawResponse = _response.data;
-      _responseData = rawResponse == null ? null : _serializers.deserialize(
-        rawResponse,
-        specifiedType: const FullType(SegnalazioneOutput),
-      ) as SegnalazioneOutput;
-
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(
+              rawResponse,
+              specifiedType: const FullType(SegnalazioneOutput),
+            ) as SegnalazioneOutput;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -370,5 +394,4 @@ class SegnalazioniApi {
       extra: _response.extra,
     );
   }
-
 }

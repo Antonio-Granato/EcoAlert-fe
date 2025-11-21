@@ -9,10 +9,8 @@ import 'package:dio/dio.dart';
 
 import 'package:built_collection/built_collection.dart';
 import 'package:openapi/src/model/ente_output.dart';
-import 'package:openapi/src/model/error.dart';
 
 class EntiApi {
-
   final Dio _dio;
 
   final Serializers _serializers;
@@ -20,7 +18,7 @@ class EntiApi {
   const EntiApi(this._dio, this._serializers);
 
   /// Ottiene la lista di tutti gli enti
-  /// 
+  ///
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -32,7 +30,7 @@ class EntiApi {
   ///
   /// Returns a [Future] containing a [Response] with a [BuiltList<EnteOutput>] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<BuiltList<EnteOutput>>> getAllEnti({ 
+  Future<Response<BuiltList<EnteOutput>>> getAllEnti({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -65,11 +63,12 @@ class EntiApi {
 
     try {
       final rawResponse = _response.data;
-      _responseData = rawResponse == null ? null : _serializers.deserialize(
-        rawResponse,
-        specifiedType: const FullType(BuiltList, [FullType(EnteOutput)]),
-      ) as BuiltList<EnteOutput>;
-
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(
+              rawResponse,
+              specifiedType: const FullType(BuiltList, [FullType(EnteOutput)]),
+            ) as BuiltList<EnteOutput>;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -91,5 +90,4 @@ class EntiApi {
       extra: _response.extra,
     );
   }
-
 }
