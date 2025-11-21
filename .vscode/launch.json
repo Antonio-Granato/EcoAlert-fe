@@ -1,0 +1,34 @@
+{
+    // Usare IntelliSense per informazioni sui possibili attributi.
+    // Al passaggio del mouse vengono visualizzate le descrizioni degli attributi esistenti.
+    // Per altre informazioni, visitare: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "eco_alert",
+            "cwd": "eco_alert",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "eco_alert (profile mode)",
+            "cwd": "eco_alert",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "eco_alert (release mode)",
+            "cwd": "eco_alert",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "api",
+            "cwd": "eco_alert\\api\\api",
+            "request": "launch",
+            "type": "dart"
+        }
+    ]
+}

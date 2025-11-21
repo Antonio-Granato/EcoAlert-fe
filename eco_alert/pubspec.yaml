@@ -1,0 +1,29 @@
+name: eco_alert
+description: "EcoAlert project."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.1.0
+  openapi:
+    path: api/api
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+  # necessari per generare modelli JSON
+  build_runner: ^2.4.0
+  json_serializable: ^6.7.0
+  openapi_dart: ^0.2.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/sfondo1.jpg

@@ -1,0 +1,676 @@
+openapi: 3.0.3
+info:
+  title: EcoAlert API
+  version: 1.0.0
+  description: API per la gestione utenti, autenticazione e home page
+
+tags:
+  - name: Segnalazioni
+    description: Operazioni sulle segnalazioni ambientali
+  - name: Enti
+    description: Operazioni sugli enti
+  - name: Auth
+    description: Login e registrazione
+  - name: Utenti
+    description: Informazioni sugli utenti
+  - name: Commenti
+    description: Gestione dei commenti
+
+paths:
+
+  /user/{id}/segnalazione/{idSegnalazione}/commenti:
+    post:
+      tags:
+        - Commenti
+      summary: Aggiunge un commento a una segnalazione
+      description: Cittadini o enti possono aggiungere commenti solo alle segnalazioni associate ai loro ID.
+      operationId: createCommento
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: idSegnalazione
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentoInput'
+      responses:
+        '201':
+          description: Commento creato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentoOutput'
+        '403':
+          description: Utente non autorizzato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Segnalazione o utente non trovati
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /user/{id}/segnalazione/{idSegnalazione}/commenti/{idCommento}:
+    delete:
+      tags:
+        - Commenti
+      summary: Elimina un commento da una segnalazione
+      description: >
+        L'utente può eliminare solo i propri commenti sotto la segnalazione.
+      operationId: deleteCommento
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: idSegnalazione
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: idCommento
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Commento eliminato con successo
+        '403':
+          description: Utente non autorizzato a eliminare questo commento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Commento, segnalazione o utente non trovati
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /user/{id}/segnalazioni/{idSegnalazione}:
+    delete:
+      tags:
+        - Segnalazioni
+      summary: Elimina una segnalazione appartenente al cittadino
+      description: >
+                    Un cittadino può eliminare **solo** una sua segnalazione **non in stato di inserito**.
+                    Un ente non può eliminare alcuna segnalazione.
+      operationId: deleteSegnalazione
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: idSegnalazione
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Segnalazione eliminata con successo
+        '400':
+          description: La segnalazione è in stato INSERITO
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: L'utente non è autorizzato a eliminare la segnalazione
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Utente o segnalazione non trovati
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Segnalazioni
+      summary: Modifica una segnalazione del cittadino
+      description: >
+        Un cittadino può modificare **solo le proprie segnalazioni non chiuse**.
+        Solo il titolo, la descrizione, la latitudine, la longitudine e l'ente associato possono essere aggiornati.
+      operationId: updateSegnalazione
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: idSegnalazione
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SegnalazioneInput'
+      responses:
+        '200':
+          description: Segnalazione aggiornata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegnalazioneOutput'
+        '400':
+          description: Dati non validi o segnalazione chiusa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Utente non autorizzato a modificare la segnalazione
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Utente o segnalazione non trovati
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      tags:
+        - Utenti
+      summary: Ottiene il dettaglio di una segnalazione
+      description: >
+        Restituisce una segnalazione specifica.
+        - Un cittadino può vedere solo le proprie segnalazioni.
+        - Un ente può vedere solo le segnalazioni associate a sé.
+      operationId: getSegnalazioneById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID dell'utente
+          schema:
+            type: integer
+        - name: idSegnalazione
+          in: path
+          required: true
+          description: ID della segnalazione
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Dettaglio della segnalazione
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegnalazioneOutput'
+        '403':
+          description: Accesso non autorizzato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Segnalazione o utente non trovati
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /user/{id}/segnalazioni:
+    get:
+      tags:
+        - Utenti
+      summary: Ottiene le segnalazioni associate all’utente
+      operationId: getSegnalazioniByUserId
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista segnalazioni
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SegnalazioneOutput'
+        '404':
+          description: Utente non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /segnalazioni/{idSegnalazione}/ente:
+    put:
+      tags:
+        - Segnalazioni
+      summary: Aggiorna lo stato e/o la ditta di una segnalazione
+      description: >
+        Permette a un ente di aggiornare lo stato di una segnalazione (da INSERITO a PRESO_IN_CARICO, SOSPESO o CHIUSO)
+        e di inserire la ditta che risolve la segnalazione.
+      operationId: updateSegnalazioneEnte
+      parameters:
+        - name: idSegnalazione
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: idEnte
+          in: query
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SegnalazioneUpdateInputEnte'
+      responses:
+        '200':
+          description: Stato e/o ditta aggiornati con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegnalazioneOutput'
+        '400':
+          description: Richiesta non valida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Segnalazione o ente non trovati
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Errore interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /enti:
+    get:
+      tags:
+        - Enti
+      summary: Ottiene la lista di tutti gli enti
+      operationId: getAllEnti
+      responses:
+        '200':
+          description: Lista degli enti recuperata con successo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EnteOutput'
+        '500':
+          description: Errore interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /login:
+    post:
+      tags:
+        - Auth
+      summary: Effettua il login dell'utente
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+      responses:
+        '200':
+          description: Login effettuato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginOutput'
+        '401':
+          description: Credenziali non valide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Errore interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sign-in:
+    post:
+      tags:
+        - Auth
+      summary: Registra un nuovo utente
+      operationId: signIn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UtenteInput'
+      responses:
+        '201':
+          description: Utente creato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UtenteOutput'
+        '400':
+          description: Dati non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Errore interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /user/{id}:
+    get:
+      tags:
+        - Utenti
+      summary: Ottiene i dettagli di un utente
+      operationId: getUserById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Utente trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UtenteDettaglioOutput'
+        '404':
+          description: Utente non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Errore interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /user/{id}/segnalazione:
+    post:
+      tags:
+        - Segnalazioni
+      summary: Crea una nuova segnalazione
+      operationId: createSegnalazione
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SegnalazioneInput'
+      responses:
+        '201':
+          description: Segnalazione creata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegnalazioneOutput'
+        '400':
+          description: Dati non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Utente non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Errore interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    EnteOutput:
+      type: object
+      properties:
+        id:
+          type: integer
+        nomeEnte:
+          type: string
+        paese:
+          type: string
+        nazione:
+          type: string
+        email:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        detail:
+          type: string
+
+    LoginInput:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    LoginOutput:
+      type: object
+      properties:
+        userId:
+          type: integer
+        token:
+          type: string
+        ruolo:
+          type: string
+
+    SegnalazioneInput:
+      type: object
+      properties:
+        titolo:
+          type: string
+          description: Titolo della segnalazione
+        descrizione:
+          type: string
+          description: Testo della segnalazione
+        latitudine:
+          type: number
+          format: double
+          x-java-type: java.lang.Double
+          description: Latitudine della posizione della segnalazione
+        longitudine:
+          type: number
+          format: double
+          x-java-type: java.lang.Double
+          description: Longitudine della posizione della segnalazione
+        idEnte:
+          type: integer
+          description: ID dell'ente a cui associare la segnalazione
+      required:
+        - descrizione
+        - latitudine
+        - longitudine
+        - idEnte
+
+    SegnalazioneOutput:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID della segnalazione
+        idUtente:
+          type: integer
+          description: ID del cittadino che ha creato la segnalazione
+        idEnte:
+          type: integer
+          description: ID dell'ente associato alla segnalazione
+        titolo:
+          type: string
+          description: Titolo della segnalazione
+        descrizione:
+          type: string
+          description: Testo della segnalazione
+        latitudine:
+          type: number
+          format: double
+          x-java-type: java.lang.Double
+          description: Latitudine della segnalazione
+        longitudine:
+          type: number
+          format: double
+          x-java-type: java.lang.Double
+          description: Longitudine della segnalazione
+        stato:
+          $ref: '#/components/schemas/StatoEnum'
+          description: Stato della segnalazione
+        ditta:
+          type: string
+          description: Ditta della segnalazione
+        commenti: # ← LISTA DEI COMMENTI
+          type: array
+          items:
+            $ref: '#/components/schemas/CommentoOutput'
+
+    UtenteDettaglioOutput:
+      type: object
+      properties:
+        id:
+          type: integer
+        ruolo:
+          type: string
+        email:
+          type: string
+        nome:
+          type: string
+        cognome:
+          type: string
+        nomeEnte:
+          type: string
+        paese:
+          type: string
+        nazione:
+          type: string
+
+    UtenteInput:
+      type: object
+      properties:
+        nome:
+          type: string
+        cognome:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        paese:
+          type: string
+        nazione:
+          type: string
+        ruolo:
+          type: string
+
+    UtenteOutput:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        ruolo:
+          type: string
+
+    SegnalazioneUpdateInputEnte:
+      type: object
+      properties:
+        stato:
+          $ref: '#/components/schemas/StatoEnum'
+          description: Nuovo stato della segnalazione (opzionale)
+        ditta:
+          type: string
+          description: Nome della ditta che gestisce la segnalazione (opzionale)
+
+    StatoEnum:
+      type: string
+      enum:
+        - INSERITO
+        - PRESO_IN_CARICO
+        - SOSPESO
+        - CHIUSO
+
+    CommentoInput:
+      type: object
+      properties:
+        descrizione:
+          type: string
+          description: Testo del commento
+
+    CommentoOutput:
+      type: object
+      properties:
+        id:
+          type: integer
+        descrizione:
+          type: string
