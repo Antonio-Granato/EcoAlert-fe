@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:openapi/openapi.dart';
 import 'package:dio/dio.dart';
-import 'package:built_value/serializer.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class SignInPage extends StatefulWidget {
@@ -27,175 +26,160 @@ class _SignInPageState extends State<SignInPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // 📸 Sfondo
-          Positioned.fill(
-            child: Image.asset("assets/images/sfondo1.jpg", fit: BoxFit.cover),
-          ),
-
-          // 🌟 Contenuto centrato
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: 400,
-                ), // card non troppo larga
-                child: Card(
-                  elevation: 8,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  color: Colors.white.withOpacity(0.9),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Form(
-                      key: formKey,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            "Registrati",
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Nome
-                          TextFormField(
-                            controller: nameController,
-                            decoration: const InputDecoration(
-                              labelText: "Nome",
-                              prefixIcon: Icon(Icons.person),
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) =>
-                                (value == null || value.isEmpty)
-                                ? 'Inserisci il nome'
-                                : null,
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Cognome
-                          TextFormField(
-                            controller: cognomeController,
-                            decoration: const InputDecoration(
-                              labelText: "Cognome",
-                              prefixIcon: Icon(Icons.person_outline),
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) =>
-                                (value == null || value.isEmpty)
-                                ? 'Inserisci il cognome'
-                                : null,
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Email
-                          TextFormField(
-                            controller: emailController,
-                            decoration: const InputDecoration(
-                              labelText: "Email",
-                              prefixIcon: Icon(Icons.email),
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) =>
-                                (value == null || value.isEmpty)
-                                ? 'Inserisci una email'
-                                : null,
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Password
-                          TextFormField(
-                            controller: passwordController,
-                            obscureText: true,
-                            decoration: const InputDecoration(
-                              labelText: "Password",
-                              prefixIcon: Icon(Icons.lock),
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) =>
-                                (value == null || value.isEmpty)
-                                ? 'Inserisci una password'
-                                : null,
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Paese
-                          TextFormField(
-                            controller: paeseController,
-                            decoration: const InputDecoration(
-                              labelText: "Paese / Città",
-                              prefixIcon: Icon(Icons.location_city),
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Nazione
-                          TextFormField(
-                            controller: nazioneController,
-                            decoration: const InputDecoration(
-                              labelText: "Nazione",
-                              prefixIcon: Icon(Icons.public),
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-
-                          if (signInError != null) ...[
-                            const SizedBox(height: 12),
-                            Text(
-                              signInError!,
-                              style: const TextStyle(
-                                color: Colors.red,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 24),
-
-                          // Bottone Registrati
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              onPressed: isLoading ? null : _signIn,
-                              child: isLoading
-                                  ? const CircularProgressIndicator(
-                                      color: Colors.white,
-                                    )
-                                  : const Text(
-                                      "Registrati",
-                                      style: TextStyle(fontSize: 16),
-                                    ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Link alla login
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text("Hai già un account? Accedi"),
-                          ),
-                        ],
+      backgroundColor: Colors.grey.shade100,
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              color: Colors.white.withOpacity(0.95),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        "Registrati",
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 24),
+
+                      // Nome
+                      TextFormField(
+                        controller: nameController,
+                        decoration: const InputDecoration(
+                          labelText: "Nome",
+                          prefixIcon: Icon(Icons.person),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? 'Inserisci il nome'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Cognome
+                      TextFormField(
+                        controller: cognomeController,
+                        decoration: const InputDecoration(
+                          labelText: "Cognome",
+                          prefixIcon: Icon(Icons.person_outline),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? 'Inserisci il cognome'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Email
+                      TextFormField(
+                        controller: emailController,
+                        decoration: const InputDecoration(
+                          labelText: "Email",
+                          prefixIcon: Icon(Icons.email),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? 'Inserisci una email'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Password
+                      TextFormField(
+                        controller: passwordController,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          labelText: "Password",
+                          prefixIcon: Icon(Icons.lock),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? 'Inserisci una password'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Paese
+                      TextFormField(
+                        controller: paeseController,
+                        decoration: const InputDecoration(
+                          labelText: "Paese / Città",
+                          prefixIcon: Icon(Icons.location_city),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Nazione
+                      TextFormField(
+                        controller: nazioneController,
+                        decoration: const InputDecoration(
+                          labelText: "Nazione",
+                          prefixIcon: Icon(Icons.public),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+
+                      if (signInError != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          signInError!,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 24),
+
+                      // Bottone Registrati
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: isLoading ? null : _signIn,
+                          child: isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : const Text(
+                                  "Registrati",
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text("Hai già un account? Accedi"),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -234,20 +218,21 @@ class _SignInPageState extends State<SignInPage> {
 
       Navigator.pop(context);
     } catch (ex) {
-      ex as DioException;
-      if (ex.response?.statusCode == 409) {
-        final raw = ex.response?.data;
-        Error? responseError;
-        responseError = raw == null
-            ? null
-            : standardSerializers.deserialize(
-                    raw,
-                    specifiedType: const FullType(Error),
-                  )
-                  as Error;
-        setState(() => signInError = "${responseError!.message}");
-      } else {
-        setState(() => signInError = "Errore durante la registrazione");
+      if (ex is DioException) {
+        String? message;
+
+        // Se il server ritorna JSON con { "message": "..." }
+        if (ex.response?.data is Map<String, dynamic>) {
+          message = (ex.response?.data as Map<String, dynamic>)["message"]
+              ?.toString();
+        }
+
+        // Creo oggetto Error come richiesto
+        final err = Error(
+          (b) => b..message = message ?? "Errore durante la registrazione",
+        );
+
+        setState(() => signInError = err.message);
       }
     } finally {
       if (mounted) setState(() => isLoading = false);

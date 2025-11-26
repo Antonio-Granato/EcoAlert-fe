@@ -19,146 +19,122 @@ class _LoginPageState extends State<LoginPage> {
   bool isLoading = false;
   String? loginError;
 
-  // 🔥 Variabili per l’animazione del gradient
-  List<Color> gradientColors1 = [Colors.green.shade200, Colors.teal.shade300];
-
-  List<Color> gradientColors2 = [
-    Colors.green.shade400,
-    Colors.lightGreen.shade200,
-  ];
-
-  bool toggle = false;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // 📸 Sfondo
-          Positioned.fill(
-            child: Image.asset("assets/images/sfondo1.jpg", fit: BoxFit.cover),
-          ),
-
-          // 🌟 Contenuto
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: 400, // qui scegli la larghezza massima
-                ),
-                child: Card(
-                  elevation: 8,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Form(
-                      key: formKey,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            "EcoAlert",
-                            style: TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Email
-                          TextFormField(
-                            controller: emailController,
-                            decoration: const InputDecoration(
-                              labelText: "Email",
-                              prefixIcon: Icon(Icons.email),
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) =>
-                                (value == null || value.isEmpty)
-                                ? "Inserisci una email"
-                                : null,
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Password
-                          TextFormField(
-                            controller: passwordController,
-                            obscureText: true,
-                            decoration: const InputDecoration(
-                              labelText: "Password",
-                              prefixIcon: Icon(Icons.lock),
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) =>
-                                (value == null || value.isEmpty)
-                                ? "Inserisci una password"
-                                : null,
-                          ),
-
-                          if (loginError != null) ...[
-                            const SizedBox(height: 12),
-                            Text(
-                              loginError!,
-                              style: const TextStyle(
-                                color: Colors.red,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-
-                          const SizedBox(height: 24),
-
-                          // Bottone Login
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              onPressed: isLoading ? null : _login,
-                              child: isLoading
-                                  ? const CircularProgressIndicator(
-                                      color: Colors.white,
-                                    )
-                                  : const Text(
-                                      "Accedi",
-                                      style: TextStyle(fontSize: 16),
-                                    ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Link Registrazione
-                          TextButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      SignInPage(authApi: widget.authApi),
-                                ),
-                              );
-                            },
-                            child: const Text("Non hai un account? Registrati"),
-                          ),
-                        ],
+      backgroundColor: Colors.grey.shade100,
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              color: Colors.white.withOpacity(0.95),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        "EcoAlert",
+                        style: TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 24),
+
+                      // Email
+                      TextFormField(
+                        controller: emailController,
+                        decoration: const InputDecoration(
+                          labelText: "Email",
+                          prefixIcon: Icon(Icons.email),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? "Inserisci una email"
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Password
+                      TextFormField(
+                        controller: passwordController,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          labelText: "Password",
+                          prefixIcon: Icon(Icons.lock),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? "Inserisci una password"
+                            : null,
+                      ),
+
+                      if (loginError != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          loginError!,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 24),
+
+                      // Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: isLoading ? null : _login,
+                          child: isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : const Text(
+                                  "Accedi",
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  SignInPage(authApi: widget.authApi),
+                            ),
+                          );
+                        },
+                        child: const Text("Non hai un account? Registrati"),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -186,14 +162,39 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
     } catch (ex) {
-      ex as DioException;
-      if (ex.response?.statusCode == 401) {
-        setState(() => loginError = "Credenziali non valide");
+      if (ex is DioException) {
+        String? serverMessage;
+        if (ex.response?.data is Map<String, dynamic>) {
+          serverMessage = (ex.response?.data as Map<String, dynamic>)['message']
+              ?.toString();
+        }
+
+        final err = Error(
+          (b) => b
+            ..message =
+                serverMessage ??
+                (ex.response?.statusCode == 401
+                    ? "Credenziali non valide"
+                    : "Si è verificato un errore. Riprova."),
+        );
+
+        setState(() {
+          loginError = err.message;
+        });
       } else {
-        setState(() => loginError = "Si è verificato un errore. Riprova.");
+        final err = Error(
+          (b) => b..message = "Si è verificato un errore. Riprova.",
+        );
+        setState(() {
+          loginError = err.message;
+        });
       }
     } finally {
-      if (mounted) setState(() => isLoading = false);
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 }

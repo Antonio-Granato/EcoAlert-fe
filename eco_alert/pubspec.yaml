@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^1.1.0
+  flutter_dotenv: ^5.1.0
   openapi:
     path: api/api
 
@@ -26,4 +27,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/sfondo1.jpg
+  - .env
+  - assets/images/sfondo1.jpg
+  - assets/images/ECO.jpg
