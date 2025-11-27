@@ -1,4 +1,5 @@
 import 'package:eco_alert/presentation/mobile/Page/profiloPage.dart';
+import 'package:eco_alert/presentation/mobile/Page/dettaglioSegnalazionePage.dart';
 import 'package:flutter/material.dart';
 import 'package:openapi/openapi.dart';
 import 'package:dio/dio.dart';
@@ -121,7 +122,25 @@ class _HomePageState extends State<HomePage> {
 
               return GestureDetector(
                 onTap: () {
-                  // TODO: Apri pagina dettaglio segnalazione
+                  if (segnal.id == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("ID segnalazione mancante 😕"),
+                      ),
+                    );
+                    return;
+                  }
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DettaglioSegnalazionePage(
+                        utentiApi: widget.utentiApi,
+                        userId: widget.userId,
+                        segnalazioneId: segnal.id!,
+                      ),
+                    ),
+                  );
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
