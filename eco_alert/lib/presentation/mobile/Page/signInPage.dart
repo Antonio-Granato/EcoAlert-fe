@@ -195,6 +195,21 @@ class _SignInPageState extends State<SignInPage> {
     try {
       final ruolo = kIsWeb ? "ente" : "cittadino";
 
+      // blocca registrazione non autorizzata
+      if (!kIsWeb && ruolo != "cittadino") {
+        setState(
+          () => signInError = "Solo i cittadini possono registrarsi da mobile.",
+        );
+        return;
+      }
+
+      if (kIsWeb && ruolo != "ente") {
+        setState(
+          () => signInError = "Solo gli enti possono registrarsi da web.",
+        );
+        return;
+      }
+
       final response = await widget.authApi.signIn(
         utenteInput: UtenteInput(
           (b) => b
