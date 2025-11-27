@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:openapi/openapi.dart';
 import 'package:dio/dio.dart';
@@ -155,6 +156,26 @@ class _LoginPageState extends State<LoginPage> {
             ..password = passwordController.text,
         ),
       );
+
+      final ruolo = response.data?.ruolo;
+
+      // MOBILE → solo cittadini
+      if (!kIsWeb && ruolo != "cittadino") {
+        setState(() {
+          loginError =
+              "Accesso negato: gli enti non possono accedere da mobile.";
+        });
+        return;
+      }
+
+      // WEB → solo enti
+      if (kIsWeb && ruolo != "ente") {
+        setState(() {
+          loginError =
+              "Accesso negato: i cittadini non possono accedere da web.";
+        });
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
