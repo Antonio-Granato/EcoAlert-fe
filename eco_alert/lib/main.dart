@@ -26,6 +26,7 @@ class MyApp extends StatelessWidget {
     );
 
     final authApi = AuthApi(dio, standardSerializers);
+    final utentiApi = UtentiApi(dio, standardSerializers);
 
     return MaterialApp(
       title: 'EcoAlert',
@@ -33,8 +34,10 @@ class MyApp extends StatelessWidget {
 
       // ROUTING CONFIGURATO
       routes: {
-        '/welcome': (_) => WelcomePage(authApi: authApi),
-        '/login': (_) => LoginPage(authApi: authApi),
+        '/welcome': (_) =>
+            WelcomePage(authApi: authApi, utentiApi: utentiApi, dio: dio),
+        '/login': (_) =>
+            LoginPage(authApi: authApi, utentiApi: utentiApi, dio: dio),
         '/signup': (_) => SignInPage(authApi: authApi),
       },
 

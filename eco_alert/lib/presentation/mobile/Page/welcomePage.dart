@@ -2,11 +2,18 @@ import 'package:flutter/material.dart';
 import 'loginPage.dart';
 import 'signInPage.dart';
 import 'package:openapi/openapi.dart';
+import 'package:dio/dio.dart';
 
 class WelcomePage extends StatelessWidget {
   final AuthApi authApi;
-
-  const WelcomePage({super.key, required this.authApi});
+  final UtentiApi utentiApi;
+  final Dio dio;
+  const WelcomePage({
+    super.key,
+    required this.authApi,
+    required this.utentiApi,
+    required this.dio,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +72,11 @@ class WelcomePage extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => LoginPage(authApi: authApi),
+                        builder: (_) => LoginPage(
+                          authApi: authApi,
+                          utentiApi: utentiApi,
+                          dio: dio,
+                        ),
                       ),
                     );
                   },
