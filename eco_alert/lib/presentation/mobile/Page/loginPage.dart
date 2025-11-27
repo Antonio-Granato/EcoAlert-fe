@@ -1,3 +1,4 @@
+import 'package:eco_alert/presentation/mobile/Page/homePage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:openapi/openapi.dart';
@@ -5,8 +6,15 @@ import 'package:dio/dio.dart';
 import 'signInPage.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key, required this.authApi});
+  const LoginPage({
+    super.key,
+    required this.authApi,
+    required this.utentiApi,
+    required this.dio,
+  });
   final AuthApi authApi;
+  final UtentiApi utentiApi;
+  final Dio dio;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -177,9 +185,14 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Login effettuato! UserId: ${response.data?.userId}"),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => HomePage(
+            utentiApi: widget.utentiApi,
+            userId: response.data!.userId!,
+            dio: widget.dio, // <-- userId passato
+          ),
         ),
       );
     } catch (ex) {

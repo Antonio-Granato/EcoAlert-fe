@@ -193,23 +193,7 @@ class _SignInPageState extends State<SignInPage> {
     });
 
     try {
-      final ruolo = kIsWeb ? "ente" : "cittadino";
-
-      // blocca registrazione non autorizzata
-      if (!kIsWeb && ruolo != "cittadino") {
-        setState(
-          () => signInError = "Solo i cittadini possono registrarsi da mobile.",
-        );
-        return;
-      }
-
-      if (kIsWeb && ruolo != "ente") {
-        setState(
-          () => signInError = "Solo gli enti possono registrarsi da web.",
-        );
-        return;
-      }
-
+      // SOLO ORA FAI LA CHIAMATA
       final response = await widget.authApi.signIn(
         utenteInput: UtenteInput(
           (b) => b
@@ -218,10 +202,25 @@ class _SignInPageState extends State<SignInPage> {
             ..email = emailController.text
             ..password = passwordController.text
             ..paese = paeseController.text
-            ..nazione = nazioneController.text
-            ..ruolo = ruolo,
+            ..nazione = nazioneController.text,
         ),
       );
+
+      final roleFromServer = response.data?.ruolo;
+
+      if (kIsWeb && roleFromServer != "ente") {
+        setState(
+          () => signInError = "I cittadini non possono registrarsi da web.",
+        );
+        return;
+      }
+
+      if (!kIsWeb && roleFromServer != "cittadino") {
+        setState(
+          () => signInError = "Gli enti non possono registrarsi da mobile.",
+        );
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -236,13 +235,11 @@ class _SignInPageState extends State<SignInPage> {
       if (ex is DioException) {
         String? message;
 
-        // Se il server ritorna JSON con { "message": "..." }
         if (ex.response?.data is Map<String, dynamic>) {
           message = (ex.response?.data as Map<String, dynamic>)["message"]
               ?.toString();
         }
 
-        // Creo oggetto Error come richiesto
         final err = Error(
           (b) => b..message = message ?? "Errore durante la registrazione",
         );
