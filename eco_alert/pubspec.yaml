@@ -30,3 +30,11 @@ flutter:
   - .env
   - assets/images/sfondo1.jpg
   - assets/images/ECO.jpg
+  - assets/images/LOGO.png
+
+fonts:
+  - family: Poppins
+    fonts:
+      - asset: assets/fonts/Poppins-Regular.ttf
+      - asset: assets/fonts/Poppins-Bold.ttf
+        weight: 700
