@@ -27,7 +27,7 @@ class _LoginPageState extends State<LoginPage>
   final formKey = GlobalKey<FormState>();
 
   bool isLoading = false;
-  String? loginError;
+  Error? error;
 
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -175,10 +175,10 @@ class _LoginPageState extends State<LoginPage>
                               ? "Inserisci una password"
                               : null,
                         ),
-                        if (loginError != null) ...[
+                        if (error != null) ...[
                           const SizedBox(height: 12),
                           Text(
-                            loginError!,
+                            error!.toString(),
                             style: const TextStyle(
                               color: Colors.red,
                               fontSize: 14,
@@ -237,16 +237,20 @@ class _LoginPageState extends State<LoginPage>
 
       // MOBILE → solo cittadini
       if (!kIsWeb && ruolo != "cittadino") {
-        await _showErrorDialog(
-          "Accesso negato: gli enti non possono accedere da mobile.",
+        await Error(
+          (b) => b
+            ..message =
+                "Accesso negato: gli enti non possono accedere da mobile.",
         );
         return;
       }
 
       // WEB → solo enti
       if (kIsWeb && ruolo != "ente") {
-        await _showErrorDialog(
-          "Accesso negato: i cittadini non possono accedere da web.",
+        await Error(
+          (b) => b
+            ..message =
+                "Accesso negato: i cittadini non possono accedere da web.",
         );
         return;
       }
@@ -259,6 +263,7 @@ class _LoginPageState extends State<LoginPage>
             utentiApi: widget.utentiApi,
             userId: response.data!.userId!,
             dio: widget.dio,
+            authApi: widget.authApi,
           ),
         ),
       );
@@ -274,7 +279,7 @@ class _LoginPageState extends State<LoginPage>
           message = "Credenziali non valide";
         }
       }
-      await _showErrorDialog(message);
+      await Error((b) => b..message = message);
     } finally {
       if (mounted) {
         setState(() {
@@ -282,45 +287,5 @@ class _LoginPageState extends State<LoginPage>
         });
       }
     }
-  }
-
-  // Funzione helper per errori in login
-  Future<void> _showErrorDialog(String message) async {
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.red.shade50,
-        title: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 32),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                "Errore",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          message,
-          style: const TextStyle(fontSize: 16),
-          softWrap: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              "OK",
-              style: TextStyle(
-                color: Colors.red.shade800,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

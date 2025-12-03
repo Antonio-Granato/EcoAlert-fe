@@ -270,12 +270,16 @@ class _SignInPageState extends State<SignInPage>
       final roleFromServer = response.data?.ruolo;
 
       if (kIsWeb && roleFromServer != "ente") {
-        await _showErrorDialog("I cittadini non possono registrarsi da web.");
+        Error(
+          (b) => b..message = "I cittadini non possono registrarsi da web.",
+        );
         return;
       }
 
       if (!kIsWeb && roleFromServer != "cittadino") {
-        await _showErrorDialog("Gli enti non possono registrarsi da mobile.");
+        Error(
+          (b) => b..message = "Gli enti non possono registrarsi da mobile.",
+        );
         return;
       }
 
@@ -333,49 +337,9 @@ class _SignInPageState extends State<SignInPage>
               message;
         }
       }
-      await _showErrorDialog(message);
+      Error((b) => b..message = message);
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
-  }
-
-  // Funzione helper per mostrare errori in dialog
-  Future<void> _showErrorDialog(String message) async {
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.red.shade50,
-        title: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 32),
-            const SizedBox(width: 12),
-            Expanded(
-              child: const Text(
-                "Errore",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          message,
-          style: const TextStyle(fontSize: 16),
-          softWrap: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              "OK",
-              style: TextStyle(
-                color: Colors.red.shade800,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
