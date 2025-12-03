@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:openapi/openapi.dart';
 import 'package:dio/dio.dart';
+import 'package:eco_alert/presentation/mobile/Page/welcomePage.dart';
 
-class profiloPage extends StatelessWidget {
+class profiloPage extends StatefulWidget {
   final Dio dio;
   final UtentiApi utentiApi;
+  final AuthApi authApi;
   final int userId;
 
   const profiloPage({
@@ -12,64 +14,145 @@ class profiloPage extends StatelessWidget {
     required this.utentiApi,
     required this.userId,
     required this.dio,
+    required this.authApi,
   });
+
+  @override
+  State<profiloPage> createState() => _profiloPageState();
+}
+
+class _profiloPageState extends State<profiloPage> {
+  late Future<UtenteDettaglioOutput?> futureUser;
+
+  @override
+  void initState() {
+    super.initState();
+    futureUser = _loadUser();
+  }
 
   Future<UtenteDettaglioOutput?> _loadUser() async {
     try {
-      final res = await utentiApi.getUserById(id: userId);
+      final res = await widget.utentiApi.getUserById(id: widget.userId);
       return res.data;
     } on DioException catch (e) {
-      if (e.response?.statusCode == 404) return null;
-      rethrow;
+      // Gestione 404 e 500 come errori critici
+      if (e.response != null &&
+          (e.response!.statusCode == 404 || e.response!.statusCode == 500)) {
+        Error(
+          (b) => b
+            ..message =
+                "Utente non trovato o errore del server. Riprova più tardi.",
+        );
+        _redirectToWelcome();
+        return null;
+      }
+      // Altri errori generici
+      Error(
+        (b) => b
+          ..message =
+              "Errore imprevisto: ${e.response?.statusCode ?? e.message}",
+      );
+      _redirectToWelcome();
+      return null;
+    } catch (_) {
+      Error((b) => b..message = "Errore imprevisto.");
+      _redirectToWelcome();
+      return null;
+    }
+  }
+
+  void _redirectToWelcome() {
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => WelcomePage(
+            authApi: widget.authApi,
+            utentiApi: widget.utentiApi,
+            dio: widget.dio,
+          ),
+        ),
+        (route) => false,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final backgroundColors = [
+      const Color(0xFFe0f2f1),
+      const Color(0xFFb2dfdb),
+      const Color(0xFF80cbc4),
+    ];
+
     return Scaffold(
-      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        backgroundColor: const Color.fromARGB(255, 30, 78, 33),
         title: const Text(
           "Profilo Utente",
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         centerTitle: true,
       ),
-      body: FutureBuilder<UtenteDettaglioOutput?>(
-        future: _loadUser(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: Colors.green),
-            );
-          }
-
-          if (snapshot.hasError) {
-            return _errorMessage("Errore nel caricamento del profilo");
-          }
-
-          final utente = snapshot.data;
-          if (utente == null) {
-            return _errorMessage("Utente non trovato");
-          }
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                _profileHeader(utente),
-                const SizedBox(height: 20),
-                _infoCard(utente),
-              ],
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: backgroundColors,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
             ),
-          );
-        },
+          ),
+          SafeArea(
+            child: FutureBuilder<UtenteDettaglioOutput?>(
+              future: futureUser,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.green),
+                  );
+                }
+
+                final utente = snapshot.data;
+                if (utente == null)
+                  return const SizedBox(); // Se errore già gestito con dialog
+
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight,
+                        ),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          color: Colors.transparent,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              _profileHeader(utente),
+                              const SizedBox(height: 20),
+                              _infoCard(utente),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  // --- HEADER PROFILO (avatar + nome)
   Widget _profileHeader(UtenteDettaglioOutput utente) {
     return Column(
       children: [
@@ -100,7 +183,6 @@ class profiloPage extends StatelessWidget {
     );
   }
 
-  // --- CARD INFO UTENTE
   Widget _infoCard(UtenteDettaglioOutput utente) {
     return Card(
       elevation: 3,
@@ -124,7 +206,6 @@ class profiloPage extends StatelessWidget {
     );
   }
 
-  // --- RIGA INFORMATIVA STILIZZATA
   Widget _infoRow(IconData icon, String label, String? value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -133,8 +214,6 @@ class profiloPage extends StatelessWidget {
         children: [
           Icon(icon, color: Colors.green, size: 26),
           const SizedBox(width: 12),
-
-          // LABEL fissa → evita overflow
           SizedBox(
             width: 90,
             child: Text(
@@ -142,8 +221,6 @@ class profiloPage extends StatelessWidget {
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
-
-          // Valore flessibile → no overflow
           Expanded(
             child: Text(
               value ?? "-",
@@ -153,24 +230,6 @@ class profiloPage extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // --- MESSAGGIO DI ERRORE
-  Widget _errorMessage(String text) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 18,
-            color: Colors.red,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
       ),
     );
   }
