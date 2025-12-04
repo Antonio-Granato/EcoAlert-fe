@@ -1,3 +1,4 @@
+import 'package:eco_alert/presentation/mobile/Page/homePage.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -49,6 +50,8 @@ class MyApp extends StatelessWidget {
     // API generate da OpenAPI
     final authApi = AuthApi(dio, standardSerializers);
     final utentiApi = UtentiApi(dio, standardSerializers);
+    final segnalazioniApi = SegnalazioniApi(dio, standardSerializers);
+    final entiApi = EntiApi(dio, standardSerializers);
 
     return MaterialApp(
       title: 'EcoAlert',
@@ -56,11 +59,29 @@ class MyApp extends StatelessWidget {
 
       // 🔥 ROUTER
       routes: {
-        '/welcome': (_) =>
-            WelcomePage(authApi: authApi, utentiApi: utentiApi, dio: dio),
-        '/login': (_) =>
-            LoginPage(authApi: authApi, utentiApi: utentiApi, dio: dio),
+        '/welcome': (_) => WelcomePage(
+          authApi: authApi,
+          utentiApi: utentiApi,
+          dio: dio,
+          segnalazioniApi: segnalazioniApi,
+          entiApi: entiApi,
+        ),
+        '/login': (_) => LoginPage(
+          authApi: authApi,
+          utentiApi: utentiApi,
+          dio: dio,
+          segnalazioniApi: segnalazioniApi,
+          entiApi: entiApi,
+        ),
         '/signup': (_) => SignInPage(authApi: authApi),
+        '/home': (_) => HomePage(
+          authApi: authApi,
+          utentiApi: utentiApi,
+          dio: dio,
+          userId: 0,
+          segnalazioniApi: segnalazioniApi,
+          entiApi: entiApi,
+        ), // Aggiungi questa riga con userId appropriato
       },
 
       // 🔥 Pagina iniziale

@@ -8,6 +8,8 @@ class profiloPage extends StatefulWidget {
   final UtentiApi utentiApi;
   final AuthApi authApi;
   final int userId;
+  final SegnalazioniApi segnalazioniApi;
+  final EntiApi entiApi;
 
   const profiloPage({
     super.key,
@@ -15,6 +17,8 @@ class profiloPage extends StatefulWidget {
     required this.userId,
     required this.dio,
     required this.authApi,
+    required this.segnalazioniApi,
+    required this.entiApi,
   });
 
   @override
@@ -38,24 +42,20 @@ class _profiloPageState extends State<profiloPage> {
       // Gestione 404 e 500 come errori critici
       if (e.response != null &&
           (e.response!.statusCode == 404 || e.response!.statusCode == 500)) {
-        Error(
-          (b) => b
-            ..message =
-                "Utente non trovato o errore del server. Riprova più tardi.",
+        await _showErrorDialog(
+          "Utente non trovato o errore del server. Riprova più tardi.",
         );
         _redirectToWelcome();
         return null;
       }
       // Altri errori generici
-      Error(
-        (b) => b
-          ..message =
-              "Errore imprevisto: ${e.response?.statusCode ?? e.message}",
+      await _showErrorDialog(
+        "Errore imprevisto: ${e.response?.statusCode ?? e.message}",
       );
       _redirectToWelcome();
       return null;
     } catch (_) {
-      Error((b) => b..message = "Errore imprevisto.");
+      await _showErrorDialog("Errore imprevisto.");
       _redirectToWelcome();
       return null;
     }
@@ -70,11 +70,48 @@ class _profiloPageState extends State<profiloPage> {
             authApi: widget.authApi,
             utentiApi: widget.utentiApi,
             dio: widget.dio,
+            segnalazioniApi: widget.segnalazioniApi,
+            entiApi: widget.entiApi,
           ),
         ),
         (route) => false,
       );
     }
+  }
+
+  Future<void> _showErrorDialog(String message) async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.red.shade50,
+        title: Row(
+          children: const [
+            Icon(Icons.error_outline, color: Colors.red, size: 32),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "Errore",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(message, style: const TextStyle(fontSize: 16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "OK",
+              style: TextStyle(
+                color: Colors.red.shade800,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
