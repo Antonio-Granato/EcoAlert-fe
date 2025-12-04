@@ -11,11 +11,13 @@ class _$CommentoOutput extends CommentoOutput {
   final int? id;
   @override
   final String? descrizione;
+  @override
+  final int? idUtente;
 
   factory _$CommentoOutput([void Function(CommentoOutputBuilder)? updates]) =>
       (CommentoOutputBuilder()..update(updates))._build();
 
-  _$CommentoOutput._({this.id, this.descrizione}) : super._();
+  _$CommentoOutput._({this.id, this.descrizione, this.idUtente}) : super._();
   @override
   CommentoOutput rebuild(void Function(CommentoOutputBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -28,7 +30,8 @@ class _$CommentoOutput extends CommentoOutput {
     if (identical(other, this)) return true;
     return other is CommentoOutput &&
         id == other.id &&
-        descrizione == other.descrizione;
+        descrizione == other.descrizione &&
+        idUtente == other.idUtente;
   }
 
   @override
@@ -36,6 +39,7 @@ class _$CommentoOutput extends CommentoOutput {
     var _$hash = 0;
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, descrizione.hashCode);
+    _$hash = $jc(_$hash, idUtente.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -44,7 +48,8 @@ class _$CommentoOutput extends CommentoOutput {
   String toString() {
     return (newBuiltValueToStringHelper(r'CommentoOutput')
           ..add('id', id)
-          ..add('descrizione', descrizione))
+          ..add('descrizione', descrizione)
+          ..add('idUtente', idUtente))
         .toString();
   }
 }
@@ -61,6 +66,10 @@ class CommentoOutputBuilder
   String? get descrizione => _$this._descrizione;
   set descrizione(String? descrizione) => _$this._descrizione = descrizione;
 
+  int? _idUtente;
+  int? get idUtente => _$this._idUtente;
+  set idUtente(int? idUtente) => _$this._idUtente = idUtente;
+
   CommentoOutputBuilder() {
     CommentoOutput._defaults(this);
   }
@@ -70,6 +79,7 @@ class CommentoOutputBuilder
     if ($v != null) {
       _id = $v.id;
       _descrizione = $v.descrizione;
+      _idUtente = $v.idUtente;
       _$v = null;
     }
     return this;
@@ -93,6 +103,7 @@ class CommentoOutputBuilder
         _$CommentoOutput._(
           id: id,
           descrizione: descrizione,
+          idUtente: idUtente,
         );
     replace(_$result);
     return _$result;

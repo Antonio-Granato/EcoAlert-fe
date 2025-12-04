@@ -17,7 +17,7 @@ class CreaSegnalazionePage extends StatefulWidget {
     required this.dio,
     required this.authApi,
     required this.segnalazioniApi,
-    required this.entiApi,
+    required this.entiApi,s
   });
 
   @override

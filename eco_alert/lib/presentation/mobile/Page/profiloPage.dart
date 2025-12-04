@@ -10,6 +10,7 @@ class profiloPage extends StatefulWidget {
   final int userId;
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
+  final CommentiApi commentiApi;
 
   const profiloPage({
     super.key,
@@ -19,6 +20,7 @@ class profiloPage extends StatefulWidget {
     required this.authApi,
     required this.segnalazioniApi,
     required this.entiApi,
+    required this.commentiApi,
   });
 
   @override
@@ -72,6 +74,7 @@ class _profiloPageState extends State<profiloPage> {
             dio: widget.dio,
             segnalazioniApi: widget.segnalazioniApi,
             entiApi: widget.entiApi,
+            commentiApi: widget.commentiApi,
           ),
         ),
         (route) => false,

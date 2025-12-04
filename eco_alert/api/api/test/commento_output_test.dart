@@ -17,5 +17,10 @@ void main() {
       // TODO
     });
 
+    // int idUtente
+    test('to test the property `idUtente`', () async {
+      // TODO
+    });
+
   });
 }
