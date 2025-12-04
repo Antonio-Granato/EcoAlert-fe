@@ -10,6 +10,7 @@ class WelcomePage extends StatefulWidget {
   final Dio dio;
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
+  final CommentiApi commentiApi;
 
   const WelcomePage({
     super.key,
@@ -18,6 +19,7 @@ class WelcomePage extends StatefulWidget {
     required this.dio,
     required this.segnalazioniApi,
     required this.entiApi,
+    required this.commentiApi,
   });
 
   @override
@@ -176,6 +178,7 @@ class _WelcomePageState extends State<WelcomePage>
                             dio: widget.dio,
                             segnalazioniApi: widget.segnalazioniApi,
                             entiApi: widget.entiApi,
+                            commentiApi: widget.commentiApi,
                           ),
                         ),
                       );

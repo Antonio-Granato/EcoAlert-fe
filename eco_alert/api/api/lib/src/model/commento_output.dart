@@ -13,6 +13,7 @@ part 'commento_output.g.dart';
 /// Properties:
 /// * [id] 
 /// * [descrizione] 
+/// * [idUtente] 
 @BuiltValue()
 abstract class CommentoOutput implements Built<CommentoOutput, CommentoOutputBuilder> {
   @BuiltValueField(wireName: r'id')
@@ -20,6 +21,9 @@ abstract class CommentoOutput implements Built<CommentoOutput, CommentoOutputBui
 
   @BuiltValueField(wireName: r'descrizione')
   String? get descrizione;
+
+  @BuiltValueField(wireName: r'idUtente')
+  int? get idUtente;
 
   CommentoOutput._();
 
@@ -58,6 +62,13 @@ class _$CommentoOutputSerializer implements PrimitiveSerializer<CommentoOutput> 
         specifiedType: const FullType(String),
       );
     }
+    if (object.idUtente != null) {
+      yield r'idUtente';
+      yield serializers.serialize(
+        object.idUtente,
+        specifiedType: const FullType(int),
+      );
+    }
   }
 
   @override
@@ -94,6 +105,13 @@ class _$CommentoOutputSerializer implements PrimitiveSerializer<CommentoOutput> 
             specifiedType: const FullType(String),
           ) as String;
           result.descrizione = valueDes;
+          break;
+        case r'idUtente':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int;
+          result.idUtente = valueDes;
           break;
         default:
           unhandled.add(key);

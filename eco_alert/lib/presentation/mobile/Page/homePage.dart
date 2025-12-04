@@ -16,6 +16,7 @@ class HomePage extends StatefulWidget {
   final int userId;
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
+  final CommentiApi commentiApi;
 
   const HomePage({
     super.key,
@@ -25,6 +26,7 @@ class HomePage extends StatefulWidget {
     required this.authApi,
     required this.segnalazioniApi,
     required this.entiApi,
+    required this.commentiApi,
   });
 
   @override
@@ -99,6 +101,7 @@ class _HomePageState extends State<HomePage>
                 dio: widget.dio,
                 segnalazioniApi: widget.segnalazioniApi,
                 entiApi: widget.entiApi,
+                commentiApi: widget.commentiApi,
               ),
             ),
             (route) => false,
@@ -135,6 +138,7 @@ class _HomePageState extends State<HomePage>
               dio: widget.dio,
               segnalazioniApi: widget.segnalazioniApi,
               entiApi: widget.entiApi,
+              commentiApi: widget.commentiApi,
             ),
           ),
           (route) => false,
@@ -193,6 +197,7 @@ class _HomePageState extends State<HomePage>
           dio: widget.dio,
           segnalazioniApi: widget.segnalazioniApi,
           entiApi: widget.entiApi,
+          commentiApi: widget.commentiApi,
         ),
       ),
       (route) => false,
@@ -292,6 +297,7 @@ class _HomePageState extends State<HomePage>
                                   authApi: widget.authApi,
                                   segnalazioniApi: widget.segnalazioniApi,
                                   entiApi: widget.entiApi,
+                                  commentiApi: widget.commentiApi,
                                 ),
                               ),
                             );
@@ -372,6 +378,7 @@ class _HomePageState extends State<HomePage>
                               authApi: widget.authApi,
                               segnalazioniApi: widget.segnalazioniApi,
                               entiApi: widget.entiApi,
+                              commentiApi: widget.commentiApi,
                             ),
                           );
                         },
@@ -399,6 +406,7 @@ class _SegnalazioneCard extends StatelessWidget {
   final int userId;
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
+  final CommentiApi commentiApi;
 
   const _SegnalazioneCard({
     required this.segnalazione,
@@ -408,6 +416,7 @@ class _SegnalazioneCard extends StatelessWidget {
     required this.authApi,
     required this.segnalazioniApi,
     required this.entiApi,
+    required this.commentiApi,
   });
 
   @override
@@ -432,6 +441,7 @@ class _SegnalazioneCard extends StatelessWidget {
                   authApi: authApi,
                   segnalazioniApi: segnalazioniApi,
                   entiApi: entiApi,
+                  commentiApi: commentiApi,
                 ),
               ),
             );

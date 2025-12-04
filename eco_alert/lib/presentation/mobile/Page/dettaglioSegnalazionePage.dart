@@ -11,6 +11,7 @@ class DettaglioSegnalazionePage extends StatefulWidget {
   final int segnalazioneId;
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
+  final CommentiApi commentiApi;
 
   const DettaglioSegnalazionePage({
     super.key,
@@ -21,6 +22,7 @@ class DettaglioSegnalazionePage extends StatefulWidget {
     required this.authApi,
     required this.segnalazioniApi,
     required this.entiApi,
+    required this.commentiApi,
   });
 
   @override
@@ -30,8 +32,9 @@ class DettaglioSegnalazionePage extends StatefulWidget {
 
 class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
   late Future<SegnalazioneOutput?> futureSegnalazione;
-
   Error? error;
+
+  final TextEditingController _commentoController = TextEditingController();
 
   @override
   void initState() {
@@ -51,12 +54,10 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
       int code = ex.response?.statusCode ?? 500;
       String message = "Errore durante il caricamento";
 
-      // Ottieni messaggio dalla API se presente
       if (ex.response?.data is Map) {
         message = (ex.response!.data as Map)['message']?.toString() ?? message;
       }
 
-      // redirect solo se è realmente 500
       if (code == 500) {
         await _showErrorDialog("Errore interno del server. Riprova più tardi.");
         if (mounted) {
@@ -64,11 +65,12 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
             context,
             MaterialPageRoute(
               builder: (_) => WelcomePage(
-                authApi: widget.authApi, // riusa quello esistente
+                authApi: widget.authApi,
                 utentiApi: widget.utentiApi,
                 dio: widget.dio,
                 segnalazioniApi: widget.segnalazioniApi,
                 entiApi: widget.entiApi,
+                commentiApi: widget.commentiApi,
               ),
             ),
             (route) => false,
@@ -77,9 +79,8 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
         return null;
       }
 
-      // Errori previsti dalla OpenAPI:
-      // 400, 401, 404
       await _showErrorDialog("Errore $code: $message");
+
       setState(() {
         error = Error(
           (b) => b
@@ -136,7 +137,130 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
     );
   }
 
-  // ----- Utility UI Stato -----
+  // ============= CREATE COMMENTO ===================
+
+  Future<void> _creaCommento() async {
+    final testo = _commentoController.text.trim();
+    if (testo.isEmpty) return;
+
+    try {
+      final input = CommentoInput((b) => b..descrizione = testo);
+
+      await widget.commentiApi.createCommento(
+        id: widget.userId,
+        idSegnalazione: widget.segnalazioneId,
+        commentoInput: input,
+      );
+
+      _commentoController.clear();
+
+      setState(() {
+        futureSegnalazione = _loadDettaglio();
+      });
+    } on DioException catch (ex) {
+      int code = ex.response?.statusCode ?? 500;
+      String message = "Errore durante la creazione del commento";
+
+      if (ex.response?.data is Map) {
+        message = (ex.response!.data as Map)['message']?.toString() ?? message;
+      }
+
+      await _showErrorDialog("Errore $code: $message");
+    }
+  }
+
+  // ============= DELETE COMMENTO ===================
+
+  Future<void> _deleteCommento(int idCommento) async {
+    try {
+      await widget.commentiApi.deleteCommento(
+        id: widget.userId,
+        idSegnalazione: widget.segnalazioneId,
+        idCommento: idCommento,
+      );
+
+      // Ricarica i dettagli della segnalazione
+      setState(() {
+        futureSegnalazione = _loadDettaglio();
+      });
+    } on DioException catch (ex) {
+      int code = ex.response?.statusCode ?? 500;
+      String message = "Errore durante l'eliminazione del commento";
+
+      if (ex.response?.data is Map) {
+        message = (ex.response!.data as Map)['message']?.toString() ?? message;
+      }
+
+      await _showErrorDialog("Errore $code: $message");
+    }
+  }
+
+  // ============= DELETE SEGNALAZIONE ===============
+
+  Future<void> _deleteSegnalazione() async {
+    // Controllo stato prima di chiamare l'API
+    final segnalazione = await futureSegnalazione;
+    if (segnalazione == null) return;
+
+    // Conferma eliminazione
+    final conferma = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Conferma eliminazione"),
+        content: const Text(
+          "Vuoi davvero eliminare questa segnalazione? L'operazione è irreversibile.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Annulla"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Elimina"),
+          ),
+        ],
+      ),
+    );
+
+    if (conferma != true) return;
+
+    try {
+      await widget.segnalazioniApi.deleteSegnalazione(
+        id: widget.userId,
+        idSegnalazione: widget.segnalazioneId,
+      );
+
+      if (!mounted) return;
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => WelcomePage(
+            authApi: widget.authApi,
+            utentiApi: widget.utentiApi,
+            dio: widget.dio,
+            segnalazioniApi: widget.segnalazioniApi,
+            entiApi: widget.entiApi,
+            commentiApi: widget.commentiApi,
+          ),
+        ),
+        (route) => false,
+      );
+    } on DioException catch (ex) {
+      int code = ex.response?.statusCode ?? 500;
+      String message = "Errore durante l'eliminazione";
+
+      if (ex.response?.data is Map) {
+        message = (ex.response!.data as Map)['message']?.toString() ?? message;
+      }
+
+      await _showErrorDialog("Errore $code: $message");
+    }
+  }
+
+  // ====== UI STATO ======
+
   String _statoToString(StatoEnum? stato) {
     if (stato == null) return "Sconosciuto";
     return stato.name.replaceAll("_", " ").toUpperCase();
@@ -157,20 +281,7 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
     }
   }
 
-  Color _badgeTextColor(StatoEnum? stato) {
-    switch (stato) {
-      case StatoEnum.INSERITO:
-        return Colors.black;
-      case StatoEnum.PRESO_IN_CARICO:
-        return Colors.black;
-      case StatoEnum.SOSPESO:
-        return Colors.black;
-      case StatoEnum.CHIUSO:
-        return Colors.black;
-      default:
-        return Colors.black;
-    }
-  }
+  Color _badgeTextColor(StatoEnum? stato) => Colors.black;
 
   IconData _statoIcon(StatoEnum? stato) {
     switch (stato) {
@@ -187,7 +298,8 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
     }
   }
 
-  // ---- BUILD ----
+  // ==== BUILD ====
+
   @override
   Widget build(BuildContext context) {
     final gradientColors = [
@@ -205,10 +317,15 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
-
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _deleteSegnalazione,
+        backgroundColor: Colors.red.shade700,
+        icon: const Icon(Icons.delete),
+        label: const Text("Elimina Segnalazione"),
+        foregroundColor: Colors.white,
+      ),
       body: Stack(
         children: [
-          // Sfondo gradient full screen
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -218,8 +335,6 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
               ),
             ),
           ),
-
-          // Contenuto principale sopra il gradient
           SafeArea(
             child: FutureBuilder<SegnalazioneOutput?>(
               future: futureSegnalazione,
@@ -267,8 +382,6 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                   );
                 }
 
-                // ---- UI SEGNALAZIONE ----
-
                 return Padding(
                   padding: const EdgeInsets.all(16),
                   child: Material(
@@ -284,7 +397,7 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // ---- Header Stato ----
+                            // ====== Header ======
                             Row(
                               children: [
                                 CircleAvatar(
@@ -344,7 +457,7 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
 
                             const SizedBox(height: 16),
 
-                            // ---- Descrizione ----
+                            // ====== Descrizione ======
                             Text(
                               segnalazione.descrizione ??
                                   "Nessuna descrizione fornita",
@@ -353,7 +466,7 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
 
                             const SizedBox(height: 16),
 
-                            // ---- Ente e Ditta ----
+                            // ====== Ente e Ditta ======
                             Row(
                               children: [
                                 Expanded(
@@ -394,9 +507,9 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                               ],
                             ),
 
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 24),
 
-                            // ---- Commenti ----
+                            // ====== Commenti ======
                             if (segnalazione.commenti != null &&
                                 segnalazione.commenti!.isNotEmpty) ...[
                               const Text(
@@ -407,16 +520,100 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                                 ),
                               ),
                               const SizedBox(height: 6),
+
                               ...segnalazione.commenti!.map(
-                                (c) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 4),
-                                  child: Text(
-                                    "- ${c.descrizione}",
-                                    style: const TextStyle(fontSize: 15),
-                                  ),
+                                (c) => Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        "- ${c.descrizione}",
+                                        style: const TextStyle(fontSize: 15),
+                                      ),
+                                    ),
+
+                                    if (c.id == widget.userId)
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.delete,
+                                          color: Colors.red,
+                                        ),
+                                        onPressed: () async {
+                                          final conferma = await showDialog<bool>(
+                                            context: context,
+                                            builder: (ctx) => AlertDialog(
+                                              title: const Text(
+                                                "Conferma eliminazione",
+                                              ),
+                                              content: const Text(
+                                                "Vuoi davvero eliminare questo commento?",
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.pop(ctx, false),
+                                                  child: const Text("Annulla"),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.pop(ctx, true),
+                                                  child: const Text("Elimina"),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+
+                                          if (conferma == true) {
+                                            _deleteCommento(c.id!);
+                                          }
+                                        },
+                                      ),
+                                  ],
                                 ),
                               ),
+
+                              const SizedBox(height: 24),
                             ],
+
+                            // ====== Aggiungi Commento ======
+                            const Text(
+                              "Aggiungi un commento",
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+
+                            TextField(
+                              controller: _commentoController,
+                              decoration: InputDecoration(
+                                hintText: "Scrivi un commento...",
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              maxLines: 2,
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: ElevatedButton(
+                                onPressed: _creaCommento,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green.shade700,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text("Invia"),
+                              ),
+                            ),
+
+                            const SizedBox(height: 32),
                           ],
                         ),
                       ),

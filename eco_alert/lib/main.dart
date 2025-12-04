@@ -52,6 +52,7 @@ class MyApp extends StatelessWidget {
     final utentiApi = UtentiApi(dio, standardSerializers);
     final segnalazioniApi = SegnalazioniApi(dio, standardSerializers);
     final entiApi = EntiApi(dio, standardSerializers);
+    final commentiApi = CommentiApi(dio, standardSerializers);
 
     return MaterialApp(
       title: 'EcoAlert',
@@ -65,6 +66,7 @@ class MyApp extends StatelessWidget {
           dio: dio,
           segnalazioniApi: segnalazioniApi,
           entiApi: entiApi,
+          commentiApi: commentiApi,
         ),
         '/login': (_) => LoginPage(
           authApi: authApi,
@@ -72,6 +74,7 @@ class MyApp extends StatelessWidget {
           dio: dio,
           segnalazioniApi: segnalazioniApi,
           entiApi: entiApi,
+          commentiApi: commentiApi,
         ),
         '/signup': (_) => SignInPage(authApi: authApi),
         '/home': (_) => HomePage(
@@ -81,6 +84,7 @@ class MyApp extends StatelessWidget {
           userId: 0,
           segnalazioniApi: segnalazioniApi,
           entiApi: entiApi,
+          commentiApi: commentiApi,
         ), // Aggiungi questa riga con userId appropriato
       },
 
