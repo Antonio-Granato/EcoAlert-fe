@@ -8,12 +8,16 @@ class WelcomePage extends StatefulWidget {
   final AuthApi authApi;
   final UtentiApi utentiApi;
   final Dio dio;
+  final SegnalazioniApi segnalazioniApi;
+  final EntiApi entiApi;
 
   const WelcomePage({
     super.key,
     required this.authApi,
     required this.utentiApi,
     required this.dio,
+    required this.segnalazioniApi,
+    required this.entiApi,
   });
 
   @override
@@ -170,6 +174,8 @@ class _WelcomePageState extends State<WelcomePage>
                             authApi: widget.authApi,
                             utentiApi: widget.utentiApi,
                             dio: widget.dio,
+                            segnalazioniApi: widget.segnalazioniApi,
+                            entiApi: widget.entiApi,
                           ),
                         ),
                       );

@@ -1,7 +1,8 @@
+import 'package:eco_alert/presentation/mobile/Page/creaSegnalazionePage.dart';
+import 'package:eco_alert/presentation/mobile/Page/profiloPage.dart';
 import 'package:flutter/material.dart';
 import 'package:openapi/openapi.dart';
 import 'package:dio/dio.dart';
-import 'package:eco_alert/presentation/mobile/Page/profiloPage.dart';
 import 'package:eco_alert/presentation/mobile/Page/dettaglioSegnalazionePage.dart';
 import 'package:eco_alert/presentation/mobile/Page/welcomePage.dart';
 
@@ -13,6 +14,8 @@ class HomePage extends StatefulWidget {
   final UtentiApi utentiApi;
   final AuthApi authApi;
   final int userId;
+  final SegnalazioniApi segnalazioniApi;
+  final EntiApi entiApi;
 
   const HomePage({
     super.key,
@@ -20,6 +23,8 @@ class HomePage extends StatefulWidget {
     required this.userId,
     required this.dio,
     required this.authApi,
+    required this.segnalazioniApi,
+    required this.entiApi,
   });
 
   @override
@@ -73,7 +78,7 @@ class _HomePageState extends State<HomePage>
           error = Error(
             (b) => b
               ..code = 404
-              ..message = "Nessuna segnalazione trovata.",
+              ..message = "Non hai ancora effettuato segnalazioni.",
           );
         });
         return null;
@@ -83,10 +88,7 @@ class _HomePageState extends State<HomePage>
     } on DioException catch (ex) {
       // Errore 500 → come loginPage → dialog → redirect
       if (ex.response?.statusCode == 500) {
-        Error(
-          (b) => b..message = "Errore interno del server. Riprova più tardi.",
-        );
-
+        await _showErrorDialog("Errore interno del server. Riprova più tardi.");
         if (mounted) {
           Navigator.pushAndRemoveUntil(
             context,
@@ -95,6 +97,8 @@ class _HomePageState extends State<HomePage>
                 authApi: widget.authApi,
                 utentiApi: widget.utentiApi,
                 dio: widget.dio,
+                segnalazioniApi: widget.segnalazioniApi,
+                entiApi: widget.entiApi,
               ),
             ),
             (route) => false,
@@ -129,6 +133,8 @@ class _HomePageState extends State<HomePage>
               authApi: widget.authApi,
               utentiApi: widget.utentiApi,
               dio: widget.dio,
+              segnalazioniApi: widget.segnalazioniApi,
+              entiApi: widget.entiApi,
             ),
           ),
           (route) => false,
@@ -137,6 +143,41 @@ class _HomePageState extends State<HomePage>
 
       return null;
     }
+  }
+
+  Future<void> _showErrorDialog(String message) async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.red.shade50,
+        title: Row(
+          children: const [
+            Icon(Icons.error_outline, color: Colors.red, size: 32),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "Errore",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(message, style: const TextStyle(fontSize: 16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "OK",
+              style: TextStyle(
+                color: Colors.red.shade800,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // -----------------------------
@@ -150,6 +191,8 @@ class _HomePageState extends State<HomePage>
           authApi: widget.authApi,
           utentiApi: widget.utentiApi,
           dio: widget.dio,
+          segnalazioniApi: widget.segnalazioniApi,
+          entiApi: widget.entiApi,
         ),
       ),
       (route) => false,
@@ -162,6 +205,26 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.green,
+        child: const Icon(Icons.add, color: Colors.white),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CreaSegnalazionePage(
+                utentiApi: widget.utentiApi,
+                userId: widget.userId,
+                dio: widget.dio,
+                authApi: widget.authApi,
+                segnalazioniApi: widget.segnalazioniApi,
+                entiApi: widget.entiApi,
+              ),
+            ),
+          );
+        },
+      ),
+
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -227,6 +290,8 @@ class _HomePageState extends State<HomePage>
                                   userId: widget.userId,
                                   dio: widget.dio,
                                   authApi: widget.authApi,
+                                  segnalazioniApi: widget.segnalazioniApi,
+                                  entiApi: widget.entiApi,
                                 ),
                               ),
                             );
@@ -254,23 +319,15 @@ class _HomePageState extends State<HomePage>
                       // ERROR 404 → BOX NERO
                       if (error != null && error!.code == 404) {
                         return Center(
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            margin: const EdgeInsets.symmetric(horizontal: 32),
-                            decoration: BoxDecoration(
-                              color: Colors.black87,
-                              borderRadius: BorderRadius.circular(12),
+                          child: Text(
+                            error!.message ?? "Nessuna segnalazione creata",
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontFamily: "Poppins",
+                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
                             ),
-                            child: Text(
-                              error!.toString(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontFamily: "Poppins",
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
+                            textAlign: TextAlign.center,
                           ),
                         );
                       }
@@ -313,6 +370,8 @@ class _HomePageState extends State<HomePage>
                               userId: widget.userId,
                               dio: widget.dio,
                               authApi: widget.authApi,
+                              segnalazioniApi: widget.segnalazioniApi,
+                              entiApi: widget.entiApi,
                             ),
                           );
                         },
@@ -338,6 +397,8 @@ class _SegnalazioneCard extends StatelessWidget {
   final AuthApi authApi;
   final Dio dio;
   final int userId;
+  final SegnalazioniApi segnalazioniApi;
+  final EntiApi entiApi;
 
   const _SegnalazioneCard({
     required this.segnalazione,
@@ -345,6 +406,8 @@ class _SegnalazioneCard extends StatelessWidget {
     required this.userId,
     required this.dio,
     required this.authApi,
+    required this.segnalazioniApi,
+    required this.entiApi,
   });
 
   @override
@@ -367,6 +430,8 @@ class _SegnalazioneCard extends StatelessWidget {
                   segnalazioneId: s.id!,
                   dio: dio,
                   authApi: authApi,
+                  segnalazioniApi: segnalazioniApi,
+                  entiApi: entiApi,
                 ),
               ),
             );

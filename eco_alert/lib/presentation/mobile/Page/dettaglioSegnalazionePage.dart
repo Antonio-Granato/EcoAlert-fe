@@ -9,6 +9,8 @@ class DettaglioSegnalazionePage extends StatefulWidget {
   final Dio dio;
   final int userId;
   final int segnalazioneId;
+  final SegnalazioniApi segnalazioniApi;
+  final EntiApi entiApi;
 
   const DettaglioSegnalazionePage({
     super.key,
@@ -17,6 +19,8 @@ class DettaglioSegnalazionePage extends StatefulWidget {
     required this.segnalazioneId,
     required this.dio,
     required this.authApi,
+    required this.segnalazioniApi,
+    required this.entiApi,
   });
 
   @override
@@ -54,7 +58,7 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
 
       // redirect solo se è realmente 500
       if (code == 500) {
-        Error((b) => b..message = "Errore del server. Riprova più tardi.");
+        await _showErrorDialog("Errore interno del server. Riprova più tardi.");
         if (mounted) {
           Navigator.pushAndRemoveUntil(
             context,
@@ -63,6 +67,8 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                 authApi: widget.authApi, // riusa quello esistente
                 utentiApi: widget.utentiApi,
                 dio: widget.dio,
+                segnalazioniApi: widget.segnalazioniApi,
+                entiApi: widget.entiApi,
               ),
             ),
             (route) => false,
@@ -73,6 +79,7 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
 
       // Errori previsti dalla OpenAPI:
       // 400, 401, 404
+      await _showErrorDialog("Errore $code: $message");
       setState(() {
         error = Error(
           (b) => b
@@ -92,6 +99,41 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
       });
       return null;
     }
+  }
+
+  Future<void> _showErrorDialog(String message) async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.red.shade50,
+        title: Row(
+          children: const [
+            Icon(Icons.error_outline, color: Colors.red, size: 32),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "Errore",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(message, style: const TextStyle(fontSize: 16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "OK",
+              style: TextStyle(
+                color: Colors.red.shade800,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // ----- Utility UI Stato -----
