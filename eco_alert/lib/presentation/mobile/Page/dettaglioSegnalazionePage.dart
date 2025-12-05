@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:openapi/openapi.dart';
 import 'package:dio/dio.dart';
-import 'package:eco_alert/presentation/mobile/Page/welcomePage.dart';
 
 class DettaglioSegnalazionePage extends StatefulWidget {
   final UtentiApi utentiApi;
@@ -39,7 +38,13 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
   @override
   void initState() {
     super.initState();
-    futureSegnalazione = _loadDettaglio();
+    _refreshSegnalazione();
+  }
+
+  void _refreshSegnalazione() {
+    setState(() {
+      futureSegnalazione = _loadDettaglio();
+    });
   }
 
   Future<SegnalazioneOutput?> _loadDettaglio() async {
@@ -49,54 +54,36 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
         idSegnalazione: widget.segnalazioneId,
       );
 
-      return res.data;
-    } on DioException catch (ex) {
-      int code = ex.response?.statusCode ?? 500;
-      String message = "Errore durante il caricamento";
-
-      if (ex.response?.data is Map) {
-        message = (ex.response!.data as Map)['message']?.toString() ?? message;
-      }
-
-      if (code == 500) {
-        await _showErrorDialog("Errore interno del server. Riprova più tardi.");
-        if (mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (_) => WelcomePage(
-                authApi: widget.authApi,
-                utentiApi: widget.utentiApi,
-                dio: widget.dio,
-                segnalazioniApi: widget.segnalazioniApi,
-                entiApi: widget.entiApi,
-                commentiApi: widget.commentiApi,
-              ),
-            ),
-            (route) => false,
+      if (res.data == null) {
+        setState(() {
+          error = Error(
+            (b) => b
+              ..code = 404
+              ..message = "Segnalazione non trovata.",
           );
-        }
+        });
         return null;
       }
 
-      await _showErrorDialog("Errore $code: $message");
-
+      setState(() => error = null);
+      return res.data!;
+    } on DioException catch (ex) {
+      int code = ex.response?.statusCode ?? 0;
+      String msg = "Errore durante il caricamento della segnalazione";
+      if (ex.response?.data is Map) {
+        msg = (ex.response!.data as Map)['message']?.toString() ?? msg;
+      }
       setState(() {
         error = Error(
           (b) => b
             ..code = code
-            ..message = message,
+            ..message = msg,
         );
       });
-
       return null;
-    } catch (e) {
+    } catch (_) {
       setState(() {
-        error = Error(
-          (b) => b
-            ..code = 500
-            ..message = "Errore imprevisto",
-        );
+        error = Error((b) => b..message = "Errore imprevisto. Riprova.");
       });
       return null;
     }
@@ -137,8 +124,7 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
     );
   }
 
-  // ============= CREATE COMMENTO ===================
-
+  // ========= Commenti =========
   Future<void> _creaCommento() async {
     final testo = _commentoController.text.trim();
     if (testo.isEmpty) return;
@@ -153,23 +139,16 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
       );
 
       _commentoController.clear();
-
-      setState(() {
-        futureSegnalazione = _loadDettaglio();
-      });
+      _refreshSegnalazione();
     } on DioException catch (ex) {
       int code = ex.response?.statusCode ?? 500;
       String message = "Errore durante la creazione del commento";
-
       if (ex.response?.data is Map) {
         message = (ex.response!.data as Map)['message']?.toString() ?? message;
       }
-
       await _showErrorDialog("Errore $code: $message");
     }
   }
-
-  // ============= DELETE COMMENTO ===================
 
   Future<void> _deleteCommento(int idCommento) async {
     try {
@@ -178,31 +157,19 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
         idSegnalazione: widget.segnalazioneId,
         idCommento: idCommento,
       );
-
-      // Ricarica i dettagli della segnalazione
-      setState(() {
-        futureSegnalazione = _loadDettaglio();
-      });
+      _refreshSegnalazione();
     } on DioException catch (ex) {
       int code = ex.response?.statusCode ?? 500;
       String message = "Errore durante l'eliminazione del commento";
-
       if (ex.response?.data is Map) {
         message = (ex.response!.data as Map)['message']?.toString() ?? message;
       }
-
       await _showErrorDialog("Errore $code: $message");
     }
   }
 
-  // ============= DELETE SEGNALAZIONE ===============
-
+  // ========= Elimina segnalazione =========
   Future<void> _deleteSegnalazione() async {
-    // Controllo stato prima di chiamare l'API
-    final segnalazione = await futureSegnalazione;
-    if (segnalazione == null) return;
-
-    // Conferma eliminazione
     final conferma = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -232,39 +199,20 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
       );
 
       if (!mounted) return;
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => WelcomePage(
-            authApi: widget.authApi,
-            utentiApi: widget.utentiApi,
-            dio: widget.dio,
-            segnalazioniApi: widget.segnalazioniApi,
-            entiApi: widget.entiApi,
-            commentiApi: widget.commentiApi,
-          ),
-        ),
-        (route) => false,
-      );
+      Navigator.pop(context, true); // Torna a HomePage e trigger refresh
     } on DioException catch (ex) {
       int code = ex.response?.statusCode ?? 500;
-      String message = "Errore durante l'eliminazione";
-
+      String message = "Errore durante l'eliminazione della segnalazione";
       if (ex.response?.data is Map) {
         message = (ex.response!.data as Map)['message']?.toString() ?? message;
       }
-
       await _showErrorDialog("Errore $code: $message");
     }
   }
 
-  // ====== UI STATO ======
-
-  String _statoToString(StatoEnum? stato) {
-    if (stato == null) return "Sconosciuto";
-    return stato.name.replaceAll("_", " ").toUpperCase();
-  }
+  // ========= Badge stato =========
+  String _statoToString(StatoEnum? stato) =>
+      stato?.name.replaceAll("_", " ").toUpperCase() ?? "SCONOSCIUTO";
 
   Color _badgeColor(StatoEnum? stato) {
     switch (stato) {
@@ -281,8 +229,6 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
     }
   }
 
-  Color _badgeTextColor(StatoEnum? stato) => Colors.black;
-
   IconData _statoIcon(StatoEnum? stato) {
     switch (stato) {
       case StatoEnum.INSERITO:
@@ -297,8 +243,6 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
         return Icons.help_outline;
     }
   }
-
-  // ==== BUILD ====
 
   @override
   Widget build(BuildContext context) {
@@ -321,8 +265,11 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
         onPressed: _deleteSegnalazione,
         backgroundColor: Colors.red.shade700,
         icon: const Icon(Icons.delete),
-        label: const Text("Elimina Segnalazione"),
         foregroundColor: Colors.white,
+        label: const Text(
+          "Elimina Segnalazione",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
       ),
       body: Stack(
         children: [
@@ -353,7 +300,6 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -368,7 +314,6 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                 }
 
                 final segnalazione = snapshot.data;
-
                 if (segnalazione == null) {
                   return const Center(
                     child: Text(
@@ -376,7 +321,6 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black,
                       ),
                     ),
                   );
@@ -397,7 +341,7 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // ====== Header ======
+                            // Header
                             Row(
                               children: [
                                 CircleAvatar(
@@ -407,7 +351,7 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                                   ).withOpacity(0.3),
                                   child: Icon(
                                     _statoIcon(segnalazione.stato),
-                                    color: _badgeTextColor(segnalazione.stato),
+                                    color: Colors.black,
                                     size: 24,
                                   ),
                                 ),
@@ -440,12 +384,9 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                                         ),
                                         child: Text(
                                           _statoToString(segnalazione.stato),
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             fontSize: 13,
                                             fontWeight: FontWeight.bold,
-                                            color: _badgeTextColor(
-                                              segnalazione.stato,
-                                            ),
                                           ),
                                         ),
                                       ),
@@ -454,62 +395,13 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                                 ),
                               ],
                             ),
-
                             const SizedBox(height: 16),
-
-                            // ====== Descrizione ======
                             Text(
                               segnalazione.descrizione ??
                                   "Nessuna descrizione fornita",
                               style: const TextStyle(fontSize: 16),
                             ),
-
                             const SizedBox(height: 16),
-
-                            // ====== Ente e Ditta ======
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.business_rounded,
-                                        color: Colors.green.shade700,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Flexible(
-                                        child: Text(
-                                          segnalazione.idEnte?.toString() ??
-                                              "Nessun ente",
-                                          style: const TextStyle(fontSize: 15),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.apartment_rounded,
-                                        color: Colors.blue.shade700,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Flexible(
-                                        child: Text(
-                                          segnalazione.ditta ?? "Nessuna ditta",
-                                          style: const TextStyle(fontSize: 15),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 24),
-
-                            // ====== Commenti ======
                             if (segnalazione.commenti != null &&
                                 segnalazione.commenti!.isNotEmpty) ...[
                               const Text(
@@ -520,7 +412,6 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                                 ),
                               ),
                               const SizedBox(height: 6),
-
                               ...segnalazione.commenti!.map(
                                 (c) => Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -531,51 +422,19 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                                         style: const TextStyle(fontSize: 15),
                                       ),
                                     ),
-
-                                    if (c.id == widget.userId)
+                                    if (c.idUtente == widget.userId)
                                       IconButton(
                                         icon: const Icon(
                                           Icons.delete,
                                           color: Colors.red,
                                         ),
-                                        onPressed: () async {
-                                          final conferma = await showDialog<bool>(
-                                            context: context,
-                                            builder: (ctx) => AlertDialog(
-                                              title: const Text(
-                                                "Conferma eliminazione",
-                                              ),
-                                              content: const Text(
-                                                "Vuoi davvero eliminare questo commento?",
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(ctx, false),
-                                                  child: const Text("Annulla"),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(ctx, true),
-                                                  child: const Text("Elimina"),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-
-                                          if (conferma == true) {
-                                            _deleteCommento(c.id!);
-                                          }
-                                        },
+                                        onPressed: () => _deleteCommento(c.id!),
                                       ),
                                   ],
                                 ),
                               ),
-
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 16),
                             ],
-
-                            // ====== Aggiungi Commento ======
                             const Text(
                               "Aggiungi un commento",
                               style: TextStyle(
@@ -584,7 +443,6 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                               ),
                             ),
                             const SizedBox(height: 8),
-
                             TextField(
                               controller: _commentoController,
                               decoration: InputDecoration(
@@ -595,15 +453,18 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                               ),
                               maxLines: 2,
                             ),
-
                             const SizedBox(height: 8),
-
                             Align(
                               alignment: Alignment.centerRight,
                               child: ElevatedButton(
                                 onPressed: _creaCommento,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green.shade700,
+                                  backgroundColor: const Color.fromARGB(
+                                    255,
+                                    30,
+                                    78,
+                                    33,
+                                  ),
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -612,8 +473,6 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                                 child: const Text("Invia"),
                               ),
                             ),
-
-                            const SizedBox(height: 32),
                           ],
                         ),
                       ),

@@ -6,9 +6,6 @@ import 'package:dio/dio.dart';
 import 'package:eco_alert/presentation/mobile/Page/dettaglioSegnalazionePage.dart';
 import 'package:eco_alert/presentation/mobile/Page/welcomePage.dart';
 
-// -----------------------------
-// HOME PAGE
-// -----------------------------
 class HomePage extends StatefulWidget {
   final Dio dio;
   final UtentiApi utentiApi;
@@ -35,28 +32,21 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  late Future<List<SegnalazioneOutput>?> futureReports;
-
+  late Future<List<SegnalazioneOutput>> futureReports;
+  Error? error;
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
 
-  Error? error;
-
-  // -----------------------------
-  // INIT
-  // -----------------------------
   @override
   void initState() {
     super.initState();
-    futureReports = _loadReports();
+    _refreshReports(initial: true);
 
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-
     _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-
     _controller.forward();
   }
 
@@ -66,127 +56,43 @@ class _HomePageState extends State<HomePage>
     super.dispose();
   }
 
-  // -----------------------------
-  // CARICAMENTO SEGNALAZIONI
-  // -----------------------------
-  Future<List<SegnalazioneOutput>?> _loadReports() async {
+  Future<void> _refreshReports({bool initial = false}) async {
     try {
       final res = await widget.utentiApi.getSegnalazioniByUserId(
         id: widget.userId,
       );
 
-      if (res.data == null || res.data!.isEmpty) {
-        setState(() {
+      setState(() {
+        futureReports = Future.value(res.data?.toList() ?? []);
+        error = null;
+        if (res.data == null || res.data!.isEmpty) {
           error = Error(
             (b) => b
               ..code = 404
               ..message = "Non hai ancora effettuato segnalazioni.",
           );
-        });
-        return null;
-      }
-
-      return res.data!.toList();
-    } on DioException catch (ex) {
-      // Errore 500 → come loginPage → dialog → redirect
-      if (ex.response?.statusCode == 500) {
-        await _showErrorDialog("Errore interno del server. Riprova più tardi.");
-        if (mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (_) => WelcomePage(
-                authApi: widget.authApi,
-                utentiApi: widget.utentiApi,
-                dio: widget.dio,
-                segnalazioniApi: widget.segnalazioniApi,
-                entiApi: widget.entiApi,
-                commentiApi: widget.commentiApi,
-              ),
-            ),
-            (route) => false,
-          );
         }
-        return null;
-      }
-
-      // Altri errori → messaggio rosso
-      String msg = "Errore durante il caricamento delle segnalazioni";
-      if (ex.response?.data is Map<String, dynamic>) {
-        msg = (ex.response!.data as Map)['message']?.toString() ?? msg;
-      }
-
+      });
+    } on DioException catch (ex) {
       setState(() {
         error = Error(
           (b) => b
             ..code = ex.response?.statusCode ?? 0
-            ..message = msg,
+            ..message =
+                (ex.response?.data as Map<String, dynamic>?)?['message']
+                    ?.toString() ??
+                "Errore durante il caricamento delle segnalazioni",
         );
+        futureReports = Future.value([]);
       });
-
-      return null;
     } catch (_) {
-      Error((b) => b..message = "Errore imprevisto. Riprova.");
-
-      if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => WelcomePage(
-              authApi: widget.authApi,
-              utentiApi: widget.utentiApi,
-              dio: widget.dio,
-              segnalazioniApi: widget.segnalazioniApi,
-              entiApi: widget.entiApi,
-              commentiApi: widget.commentiApi,
-            ),
-          ),
-          (route) => false,
-        );
-      }
-
-      return null;
+      setState(() {
+        error = Error((b) => b..message = "Errore imprevisto. Riprova.");
+        futureReports = Future.value([]);
+      });
     }
   }
 
-  Future<void> _showErrorDialog(String message) async {
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.red.shade50,
-        title: Row(
-          children: const [
-            Icon(Icons.error_outline, color: Colors.red, size: 32),
-            SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                "Errore",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-        content: Text(message, style: const TextStyle(fontSize: 16)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              "OK",
-              style: TextStyle(
-                color: Colors.red.shade800,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // -----------------------------
-  // LOGOUT
-  // -----------------------------
   void _logout() {
     Navigator.pushAndRemoveUntil(
       context,
@@ -204,17 +110,14 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // -----------------------------
-  // UI
-  // -----------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.green,
         child: const Icon(Icons.add, color: Colors.white),
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => CreaSegnalazionePage(
@@ -227,9 +130,9 @@ class _HomePageState extends State<HomePage>
               ),
             ),
           );
+          if (result == true) await _refreshReports();
         },
       ),
-
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -307,69 +210,87 @@ class _HomePageState extends State<HomePage>
                     ],
                   ),
                 ),
-
-                // CONTENUTO
+                // LISTA SEGNALAZIONI
                 Expanded(
-                  child: FutureBuilder<List<SegnalazioneOutput>?>(
-                    future: futureReports,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.green,
-                            strokeWidth: 3,
-                          ),
-                        );
-                      }
-
-                      // ERROR 404 → BOX NERO
-                      if (error != null && error!.code == 404) {
-                        return Center(
-                          child: Text(
-                            error!.message ?? "Nessuna segnalazione creata",
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontFamily: "Poppins",
-                              fontWeight: FontWeight.w600,
-                              fontSize: 18,
+                  child: RefreshIndicator(
+                    onRefresh: _refreshReports,
+                    child: FutureBuilder<List<SegnalazioneOutput>>(
+                      future: futureReports,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.green,
+                              strokeWidth: 3,
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                        );
-                      }
+                          );
+                        }
 
-                      // ALTRI ERRORI → ROSSO
-                      if (error != null) {
-                        return Center(
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            margin: const EdgeInsets.symmetric(horizontal: 32),
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade600,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                        if (error != null && error!.code == 404) {
+                          return Center(
                             child: Text(
-                              "Errore ${error!.code}: ${error!.message}",
+                              error!.message ?? "Nessuna segnalazione creata",
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: Colors.black,
                                 fontFamily: "Poppins",
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 18,
                               ),
                               textAlign: TextAlign.center,
                             ),
-                          ),
-                        );
-                      }
+                          );
+                        }
 
-                      final items = snapshot.data ?? [];
+                        if (error != null) {
+                          return Center(
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade600,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                "Errore ${error!.code}: ${error!.message}",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontFamily: "Poppins",
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          );
+                        }
 
-                      return ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: items.length,
-                        itemBuilder: (context, i) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
+                        final items = snapshot.data ?? [];
+
+                        if (items.isEmpty) {
+                          return const Center(
+                            child: Text(
+                              "Non ci sono segnalazioni da mostrare",
+                              style: TextStyle(
+                                fontFamily: "Poppins",
+                                fontWeight: FontWeight.w600,
+                                fontSize: 18,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          );
+                        }
+
+                        return ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(16),
+                          itemCount: items.length,
+                          itemBuilder: (context, i) => Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: 16,
+                            ), // spazio tra le card
                             child: _SegnalazioneCard(
                               segnalazione: items[i],
                               utentiApi: widget.utentiApi,
@@ -379,11 +300,12 @@ class _HomePageState extends State<HomePage>
                               segnalazioniApi: widget.segnalazioniApi,
                               entiApi: widget.entiApi,
                               commentiApi: widget.commentiApi,
+                              onRefresh: _refreshReports,
                             ),
-                          );
-                        },
-                      );
-                    },
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -396,7 +318,7 @@ class _HomePageState extends State<HomePage>
 }
 
 // -----------------------------
-// CARD SEGNALAZIONE (immutata)
+// CARD SEGNALAZIONE
 // -----------------------------
 class _SegnalazioneCard extends StatelessWidget {
   final SegnalazioneOutput segnalazione;
@@ -407,6 +329,7 @@ class _SegnalazioneCard extends StatelessWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final Future<void> Function()? onRefresh;
 
   const _SegnalazioneCard({
     required this.segnalazione,
@@ -417,7 +340,9 @@ class _SegnalazioneCard extends StatelessWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
-  });
+    this.onRefresh,
+    Key? key,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -428,9 +353,9 @@ class _SegnalazioneCard extends StatelessWidget {
       shadowColor: Colors.grey.withOpacity(0.2),
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
-        onTap: () {
+        onTap: () async {
           if (s.id != null) {
-            Navigator.push(
+            final result = await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (_) => DettaglioSegnalazionePage(
@@ -445,6 +370,10 @@ class _SegnalazioneCard extends StatelessWidget {
                 ),
               ),
             );
+
+            if (result == true && onRefresh != null) {
+              await onRefresh?.call();
+            }
           }
         },
         borderRadius: BorderRadius.circular(20),
@@ -457,7 +386,6 @@ class _SegnalazioneCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Titolo + badge stato
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -474,9 +402,7 @@ class _SegnalazioneCard extends StatelessWidget {
                   _buildBadge(s.stato),
                 ],
               ),
-
               const SizedBox(height: 8),
-
               Text(
                 s.descrizione ?? "",
                 style: TextStyle(
@@ -487,7 +413,6 @@ class _SegnalazioneCard extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-
               const SizedBox(height: 12),
               const Align(
                 alignment: Alignment.centerRight,
@@ -500,7 +425,6 @@ class _SegnalazioneCard extends StatelessWidget {
     );
   }
 
-  // Badge stato
   Widget _buildBadge(StatoEnum? stato) {
     final colorBg =
         {
@@ -509,16 +433,9 @@ class _SegnalazioneCard extends StatelessWidget {
           StatoEnum.SOSPESO: Colors.yellow.shade100,
           StatoEnum.CHIUSO: Colors.red.shade300,
         }[stato] ??
-        Colors.red.shade100;
+        Colors.grey.shade200;
 
-    final colorText =
-        {
-          StatoEnum.INSERITO: Colors.black,
-          StatoEnum.PRESO_IN_CARICO: Colors.black,
-          StatoEnum.SOSPESO: Colors.black,
-          StatoEnum.CHIUSO: Colors.black,
-        }[stato] ??
-        Colors.black;
+    final colorText = Colors.black;
 
     final icon =
         {

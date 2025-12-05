@@ -17,7 +17,8 @@ class CreaSegnalazionePage extends StatefulWidget {
     required this.dio,
     required this.authApi,
     required this.segnalazioniApi,
-    required this.entiApi,s
+    required this.entiApi,
+    s,
   });
 
   @override
@@ -139,7 +140,7 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
         content: Text(message, style: const TextStyle(fontSize: 16)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, true),
             child: Text(
               "OK",
               style: TextStyle(
@@ -175,8 +176,11 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
+              Navigator.pop(context); // Chiude il dialog
+              Navigator.pop(
+                context,
+                true,
+              ); // Torna alla Home e restituisce true
             },
             child: Text(
               "OK",
