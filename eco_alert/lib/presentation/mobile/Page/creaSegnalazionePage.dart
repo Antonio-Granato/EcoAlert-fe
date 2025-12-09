@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:openapi/openapi.dart';
 import 'package:dio/dio.dart';
+import 'dart:async';
 
 class CreaSegnalazionePage extends StatefulWidget {
   final int userId;
@@ -30,11 +33,15 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
 
   final TextEditingController _titoloController = TextEditingController();
   final TextEditingController _descrizioneController = TextEditingController();
-  final TextEditingController _latController = TextEditingController();
-  final TextEditingController _lngController = TextEditingController();
-  int? _selectedEnteId;
+  final MapController _mapController = MapController();
+  final TextEditingController _searchController = TextEditingController();
 
+  List<dynamic> _searchResults = [];
+  LatLng? _selectedPosition;
+  double _currentZoom = 15;
+  int? _selectedEnteId;
   bool _loading = false;
+  Timer? _debounce;
 
   List<EnteOutput> _enti = [];
 
@@ -68,6 +75,48 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
     }
   }
 
+  Future<void> _searchAddress(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _searchResults = [];
+      });
+      return;
+    }
+
+    final dio = Dio();
+
+    try {
+      final response = await dio.get(
+        'https://nominatim.openstreetmap.org/search',
+        queryParameters: {
+          'q': query,
+          'format': 'json',
+          'addressdetails': 1,
+          'limit': 5,
+        },
+        options: Options(
+          headers: {
+            'User-Agent': 'com.example.scheletro', // richiesto da Nominatim
+          },
+        ),
+      );
+
+      setState(() {
+        _searchResults = response.data;
+      });
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 429) {
+        // troppe richieste → ignora silenziosamente
+        return;
+      } else {
+        _showErrorDialog("Errore nella ricerca dell'indirizzo");
+      }
+    } catch (_) {
+      // ignora errori transitori
+      return;
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedEnteId == null) {
@@ -83,8 +132,8 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
             ? null
             : _titoloController.text
         ..descrizione = _descrizioneController.text
-        ..latitudine = double.tryParse(_latController.text) ?? 0.0
-        ..longitudine = double.tryParse(_lngController.text) ?? 0.0
+        ..latitudine = _selectedPosition!.latitude
+        ..longitudine = _selectedPosition!.longitude
         ..idEnte = _selectedEnteId,
     );
 
@@ -195,6 +244,86 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
     );
   }
 
+  Widget _buildMappa() {
+    return Container(
+      height: 250,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      clipBehavior: Clip.hardEdge,
+      child: Stack(
+        children: [
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: _selectedPosition ?? const LatLng(45.4642, 9.1900),
+              initialZoom: _currentZoom,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.all,
+              ),
+              onTap: (tapPosition, latLng) {
+                setState(() {
+                  _selectedPosition = latLng;
+                });
+              },
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                userAgentPackageName: 'com.example.scheletro',
+              ),
+              if (_selectedPosition != null)
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _selectedPosition!,
+                      width: 50,
+                      height: 50,
+                      child: const Icon(
+                        Icons.location_on,
+                        color: Colors.red,
+                        size: 40,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+
+          // Pulsanti zoom
+          Positioned(
+            right: 8,
+            bottom: 8,
+            child: Column(
+              children: [
+                FloatingActionButton(
+                  mini: true,
+                  heroTag: "zoom_in_create",
+                  onPressed: () {
+                    _currentZoom += 1;
+                    _mapController.move(_mapController.center, _currentZoom);
+                  },
+                  child: const Icon(Icons.add),
+                ),
+                const SizedBox(height: 6),
+                FloatingActionButton(
+                  mini: true,
+                  heroTag: "zoom_out_create",
+                  onPressed: () {
+                    _currentZoom -= 1;
+                    _mapController.move(_mapController.center, _currentZoom);
+                  },
+                  child: const Icon(Icons.remove),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final backgroundColors = [
@@ -261,27 +390,111 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
                               maxLines: 3,
                             ),
                             const SizedBox(height: 12),
+
                             TextFormField(
-                              controller: _latController,
-                              decoration: const InputDecoration(
-                                labelText: "Latitudine",
+                              controller: _searchController,
+                              decoration: InputDecoration(
+                                labelText: "Cerca indirizzo o via",
+                                prefixIcon: const Icon(Icons.search),
+                                suffixIcon: _searchController.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear),
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          setState(() {
+                                            _searchResults = [];
+                                          });
+                                        },
+                                      )
+                                    : null,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
-                              keyboardType: TextInputType.number,
-                              validator: (v) => v == null || v.isEmpty
-                                  ? "Latitudine obbligatoria"
-                                  : null,
+                              onChanged: (value) {
+                                if (_debounce?.isActive ?? false)
+                                  _debounce!.cancel();
+
+                                _debounce = Timer(
+                                  const Duration(milliseconds: 700),
+                                  () {
+                                    _searchAddress(value);
+                                  },
+                                );
+                              },
                             ),
+
+                            if (_searchResults.isNotEmpty)
+                              Container(
+                                margin: const EdgeInsets.only(top: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 5,
+                                    ),
+                                  ],
+                                ),
+                                child: ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: _searchResults.length,
+                                  itemBuilder: (context, index) {
+                                    final item = _searchResults[index];
+                                    return ListTile(
+                                      title: Text(item['display_name']),
+                                      onTap: () {
+                                        final lat = double.parse(item['lat']);
+                                        final lon = double.parse(item['lon']);
+
+                                        final pos = LatLng(lat, lon);
+
+                                        setState(() {
+                                          _selectedPosition = pos;
+                                          _searchResults = [];
+                                          _searchController.text =
+                                              item['display_name'];
+                                        });
+
+                                        _mapController.move(pos, 16);
+                                      },
+                                    );
+                                  },
+                                ),
+                              ),
+
                             const SizedBox(height: 12),
-                            TextFormField(
-                              controller: _lngController,
-                              decoration: const InputDecoration(
-                                labelText: "Longitudine",
-                              ),
-                              keyboardType: TextInputType.number,
-                              validator: (v) => v == null || v.isEmpty
-                                  ? "Longitudine obbligatoria"
-                                  : null,
+                            const Text(
+                              "Seleziona posizione sulla mappa",
+                              style: TextStyle(fontWeight: FontWeight.bold),
                             ),
+
+                            const SizedBox(height: 8),
+
+                            Container(
+                              height: 250,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              clipBehavior: Clip.hardEdge,
+                              child: Stack(
+                                children: [
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    "Seleziona posizione sulla mappa",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _buildMappa(),
+                                ],
+                              ),
+                            ),
+
                             const SizedBox(height: 12),
                             DropdownButtonFormField<int>(
                               value: _selectedEnteId,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:openapi/openapi.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:dio/dio.dart';
 
 class DettaglioSegnalazionePage extends StatefulWidget {
@@ -168,6 +170,45 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
     }
   }
 
+  Future<void> _modificaSegnalazione() async {
+    final conferma = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Conferma modifica"),
+        content: const Text("Vuoi davvero modificare questa segnalazione?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Annulla"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Modifica"),
+          ),
+        ],
+      ),
+    );
+
+    if (conferma != true) return;
+
+    try {
+      // Aggiorniamo lo stato della pagina
+      _refreshSegnalazione();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Segnalazione modificata con successo")),
+      );
+    } on DioException catch (ex) {
+      int code = ex.response?.statusCode ?? 500;
+      String message = "Errore durante la modifica della segnalazione";
+      if (ex.response?.data is Map) {
+        message = (ex.response!.data as Map)['message']?.toString() ?? message;
+      }
+      await _showErrorDialog("Errore $code: $message");
+    }
+  }
+
   // ========= Elimina segnalazione =========
   Future<void> _deleteSegnalazione() async {
     final conferma = await showDialog<bool>(
@@ -244,6 +285,84 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
     }
   }
 
+  Widget _buildMappa(double lat, double lng) {
+    final mapController = MapController();
+
+    return Container(
+      height: 250,
+      margin: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.hardEdge,
+      child: Stack(
+        children: [
+          FlutterMap(
+            mapController: mapController,
+            options: MapOptions(
+              initialCenter: LatLng(lat, lng),
+              initialZoom: 15,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.all,
+              ),
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                userAgentPackageName: 'com.example.scheletro',
+              ),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: LatLng(lat, lng),
+                    width: 50,
+                    height: 50,
+                    child: const Icon(
+                      Icons.location_on,
+                      color: Colors.red,
+                      size: 40,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          // --------- Pulsanti zoom ----------
+          Positioned(
+            right: 8,
+            bottom: 8,
+            child: Column(
+              children: [
+                FloatingActionButton(
+                  mini: true,
+                  heroTag: "zoom_in",
+                  onPressed: () {
+                    mapController.move(
+                      mapController.center,
+                      mapController.zoom + 1,
+                    );
+                  },
+                  child: const Icon(Icons.add),
+                ),
+                const SizedBox(height: 8),
+                FloatingActionButton(
+                  mini: true,
+                  heroTag: "zoom_out",
+                  onPressed: () {
+                    mapController.move(
+                      mapController.center,
+                      mapController.zoom - 1,
+                    );
+                  },
+                  child: const Icon(Icons.remove),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final gradientColors = [
@@ -260,16 +379,40 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
           "Dettaglio Segnalazione",
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _deleteSegnalazione,
-        backgroundColor: Colors.red.shade700,
-        icon: const Icon(Icons.delete),
-        foregroundColor: Colors.white,
-        label: const Text(
-          "Elimina Segnalazione",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+            onSelected: (value) {
+              if (value == 'delete') {
+                _deleteSegnalazione();
+              } else if (value == 'edit') {
+                _modificaSegnalazione();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Text("Modifica segnalazione"),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text("Elimina segnalazione"),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -401,6 +544,14 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                                   "Nessuna descrizione fornita",
                               style: const TextStyle(fontSize: 16),
                             ),
+                            const SizedBox(height: 16),
+                            // ===== MAPPA =====
+                            if (segnalazione.latitudine != null &&
+                                segnalazione.longitudine != null)
+                              _buildMappa(
+                                segnalazione.latitudine!,
+                                segnalazione.longitudine!,
+                              ),
                             const SizedBox(height: 16),
                             if (segnalazione.commenti != null &&
                                 segnalazione.commenti!.isNotEmpty) ...[

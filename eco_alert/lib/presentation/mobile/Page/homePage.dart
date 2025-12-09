@@ -32,7 +32,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  late Future<List<SegnalazioneOutput>> futureReports;
+  Future<List<SegnalazioneOutput>> futureReports = Future.value([]);
   Error? error;
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -40,7 +40,9 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
-    _refreshReports(initial: true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshReports(initial: true);
+    });
 
     _controller = AnimationController(
       vsync: this,
