@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:eco_alert/web/Page/HomeWebPage.dart';
+import 'package:eco_alert/web/Page/SignInWebPage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -335,6 +336,32 @@ class _LoginWebPageState extends State<LoginWebPage>
                             ],
                             const SizedBox(height: 28),
                             _loginButton(width: formWidth),
+
+                            const SizedBox(height: 12),
+                            // Pulsante secondario login
+                            TextButton(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => SignInWebPage(
+                                    authApi: widget.authApi,
+                                    utentiApi: widget.utentiApi,
+                                    dio: widget.dio,
+                                    segnalazioniApi: widget.segnalazioniApi,
+                                    entiApi: widget.entiApi,
+                                    commentiApi: widget.commentiApi,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                "Non hai un account?, Registrati.",
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w500,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),

@@ -1,6 +1,9 @@
 import 'dart:math';
+import 'package:eco_alert/web/Page/ProfiloWebPage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:openapi/openapi.dart';
 import 'package:dio/dio.dart';
 
@@ -153,8 +156,8 @@ class _HomeWebPageState extends State<HomeWebPage>
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF00BFA5),
         onPressed: () {},
-        child: const Icon(Icons.add, color: Colors.white),
-        /*onPressed: () async {
+        /*child: const Icon(Icons.add, color: Colors.white),
+        onPressed: () async {
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
@@ -240,12 +243,11 @@ class _HomeWebPageState extends State<HomeWebPage>
                           backgroundColor: const Color(0xFF00BFA5),
                           child: IconButton(
                             icon: const Icon(Icons.person, color: Colors.white),
-                            onPressed: () {},
-                            /*onPressed: () {
+                            onPressed: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => profiloPage(
+                                  builder: (_) => ProfiloWebPage(
                                     utentiApi: widget.utentiApi,
                                     userId: widget.userId,
                                     dio: widget.dio,
@@ -256,7 +258,7 @@ class _HomeWebPageState extends State<HomeWebPage>
                                   ),
                                 ),
                               );
-                            },*/
+                            },
                           ),
                         ),
                       ],
@@ -437,6 +439,84 @@ class _SegnalazioneCardWeb extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildMappa(double lat, double lng) {
+    final mapController = MapController();
+
+    return Container(
+      height: 250,
+      margin: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.hardEdge,
+      child: Stack(
+        children: [
+          FlutterMap(
+            mapController: mapController,
+            options: MapOptions(
+              initialCenter: LatLng(lat, lng),
+              initialZoom: 15,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.all,
+              ),
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                userAgentPackageName: 'com.example.scheletro',
+              ),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: LatLng(lat, lng),
+                    width: 50,
+                    height: 50,
+                    child: const Icon(
+                      Icons.location_on,
+                      color: Colors.red,
+                      size: 40,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          // --------- Pulsanti zoom ----------
+          Positioned(
+            right: 8,
+            bottom: 8,
+            child: Column(
+              children: [
+                FloatingActionButton(
+                  mini: true,
+                  heroTag: "zoom_in",
+                  onPressed: () {
+                    mapController.move(
+                      mapController.center,
+                      mapController.zoom + 1,
+                    );
+                  },
+                  child: const Icon(Icons.add),
+                ),
+                const SizedBox(height: 8),
+                FloatingActionButton(
+                  mini: true,
+                  heroTag: "zoom_out",
+                  onPressed: () {
+                    mapController.move(
+                      mapController.center,
+                      mapController.zoom - 1,
+                    );
+                  },
+                  child: const Icon(Icons.remove),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:eco_alert/web/Page/HomeWebPage.dart';
 import 'package:eco_alert/web/Page/LoginWebPage.dart';
+import 'package:eco_alert/web/Page/SignInWebPage.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../mobile/Page/homePage.dart';
@@ -97,6 +98,14 @@ class MyApp extends StatelessWidget {
           commentiApi: commentiApi,
         ),
         '/LoginWeb': (_) => LoginWebPage(
+          authApi: authApi,
+          utentiApi: utentiApi,
+          dio: dio,
+          segnalazioniApi: segnalazioniApi,
+          entiApi: entiApi,
+          commentiApi: commentiApi,
+        ),
+        '/SignInWeb': (_) => SignInWebPage(
           authApi: authApi,
           utentiApi: utentiApi,
           dio: dio,

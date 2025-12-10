@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:eco_alert/web/Page/LoginWebPage.dart';
+import 'package:eco_alert/web/Page/SignInWebPage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dio/dio.dart';
@@ -295,7 +296,21 @@ class _WelcomeWebPageState extends State<WelcomeWebPage>
                         label: "Crea un account",
                         icon: Icons.person_add_alt_1_rounded,
                         width: buttonWidth,
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SignInWebPage(
+                                authApi: widget.authApi,
+                                utentiApi: widget.utentiApi,
+                                dio: widget.dio,
+                                segnalazioniApi: widget.segnalazioniApi,
+                                entiApi: widget.entiApi,
+                                commentiApi: widget.commentiApi,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
