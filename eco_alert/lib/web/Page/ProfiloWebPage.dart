@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:eco_alert/web/Page/HomeWebPage.dart';
 import 'package:eco_alert/web/Page/WelcomeWebPage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -272,13 +273,14 @@ class _ProfiloWebPageState extends State<ProfiloWebPage>
                                 Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => WelcomeWebPage(
+                                    builder: (_) => HomeWebPage(
                                       authApi: widget.authApi,
                                       utentiApi: widget.utentiApi,
                                       dio: widget.dio,
                                       segnalazioniApi: widget.segnalazioniApi,
                                       entiApi: widget.entiApi,
                                       commentiApi: widget.commentiApi,
+                                      userId: widget.userId,
                                     ),
                                   ),
                                 );

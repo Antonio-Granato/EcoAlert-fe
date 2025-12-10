@@ -1,12 +1,13 @@
-import 'dart:math';
-import 'package:eco_alert/web/Page/ProfiloWebPage.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:openapi/openapi.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:dio/dio.dart';
+import 'package:openapi/openapi.dart';
 
+import 'DettaglioSegnalazioneWeb.dart';
+import 'ProfiloWebPage.dart';
 import 'welcomeWebPage.dart';
 
 class HomeWebPage extends StatefulWidget {
@@ -33,75 +34,28 @@ class HomeWebPage extends StatefulWidget {
   State<HomeWebPage> createState() => _HomeWebPageState();
 }
 
-class _HomeWebPageState extends State<HomeWebPage>
-    with SingleTickerProviderStateMixin {
+class _HomeWebPageState extends State<HomeWebPage> {
   Future<List<SegnalazioneOutput>> futureReports = Future.value([]);
+
+  late final isMobile = MediaQuery.of(context).size.width < 900;
   Error? error;
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  final Random _random = Random();
-  final List<_CircleData> _circles = [];
 
   @override
   void initState() {
     super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshReports(initial: true);
-      final size = MediaQuery.of(context).size;
-      for (int i = 0; i < 40; i++) {
-        _circles.add(
-          _CircleData(
-            size: 30 + _random.nextDouble() * 60,
-            left: _random.nextDouble() * size.width,
-            top: _random.nextDouble() * size.height,
-            opacity: 0.03 + _random.nextDouble() * 0.05,
-            speedX: (_random.nextDouble() - 0.5) * 0.25,
-            speedY: (_random.nextDouble() - 0.5) * 0.25,
-          ),
-        );
-      }
-      _animateCircles();
-    });
-
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-    _controller.forward();
+    _refreshReports();
   }
 
-  void _animateCircles() {
-    final size = MediaQuery.of(context).size;
-    _controller.addListener(() {
-      setState(() {
-        for (final c in _circles) {
-          c.left += c.speedX;
-          c.top += c.speedY;
-          if (c.left < 0 || c.left > size.width - c.size) c.speedX *= -1;
-          if (c.top < 0 || c.top > size.height - c.size) c.speedY *= -1;
-        }
-      });
-    });
-  }
-
-  Future<void> _refreshReports({bool initial = false}) async {
+  Future<void> _refreshReports() async {
     try {
       final res = await widget.utentiApi.getSegnalazioniByUserId(
         id: widget.userId,
       );
-
       setState(() {
-        futureReports = Future.value(res.data?.toList() ?? []);
+        futureReports = Future.value(
+          List<SegnalazioneOutput>.from(res.data ?? []),
+        );
         error = null;
-        if (res.data == null || res.data!.isEmpty) {
-          error = Error(
-            (b) => b
-              ..code = 404
-              ..message = "Non ci sono ancora segnalazioni.",
-          );
-        }
       });
     } on DioException catch (ex) {
       setState(() {
@@ -109,15 +63,14 @@ class _HomeWebPageState extends State<HomeWebPage>
           (b) => b
             ..code = ex.response?.statusCode ?? 0
             ..message =
-                (ex.response?.data as Map<String, dynamic>?)?['message']
-                    ?.toString() ??
-                "Errore durante il caricamento delle segnalazioni",
+                (ex.response?.data as Map?)?['message'] ??
+                "Errore caricamento segnalazioni",
         );
         futureReports = Future.value([]);
       });
     } catch (_) {
       setState(() {
-        error = Error((b) => b..message = "Errore imprevisto. Riprova.");
+        error = Error((b) => b..message = "Errore imprevisto");
         futureReports = Future.value([]);
       });
     }
@@ -128,189 +81,167 @@ class _HomeWebPageState extends State<HomeWebPage>
       context,
       MaterialPageRoute(
         builder: (_) => WelcomeWebPage(
+          dio: widget.dio,
           authApi: widget.authApi,
           utentiApi: widget.utentiApi,
-          dio: widget.dio,
           segnalazioniApi: widget.segnalazioniApi,
           entiApi: widget.entiApi,
           commentiApi: widget.commentiApi,
         ),
       ),
-      (route) => false,
+      (_) => false,
     );
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isMobile = size.width < 650;
-    final titleSize = isMobile ? 32.0 : 48.0;
+    final isMobile = MediaQuery.of(context).size.width < 900;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF00BFA5),
-        onPressed: () {},
-        /*child: const Icon(Icons.add, color: Colors.white),
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => CreaSegnalazionePage(
-                utentiApi: widget.utentiApi,
-                userId: widget.userId,
-                dio: widget.dio,
-                authApi: widget.authApi,
-                segnalazioniApi: widget.segnalazioniApi,
-                entiApi: widget.entiApi,
-              ),
-            ),
-          );
-          if (result == true) await _refreshReports();
-        },*/
-      ),
-      body: Stack(
-        children: [
-          // Sfondo gradiente dark
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF0F2F2B),
-                  Color(0xFF0B3D35),
-                  Color(0xFF0A4A40),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF0B3D35), Color(0xFF0F2F2B)],
           ),
-          // Cerchi ambientali
-          ..._circles.map(
-            (c) => Positioned(
-              left: c.left,
-              top: c.top,
-              child: Container(
-                width: c.size,
-                height: c.size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      Colors.white.withOpacity(c.opacity),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          // Contenuto principale
-          SafeArea(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
-                    child: Row(
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.logout, color: Colors.white),
-                          tooltip: "Logout",
-                          onPressed: _logout,
+                        Icon(
+                          Icons.dashboard_customize_rounded,
+                          color: Colors.white,
+                          size: isMobile ? 28 : 36,
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Text(
-                            "Le tue segnalazioni",
-                            style: GoogleFonts.manrope(
-                              fontSize: titleSize,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        CircleAvatar(
-                          backgroundColor: const Color(0xFF00BFA5),
-                          child: IconButton(
-                            icon: const Icon(Icons.person, color: Colors.white),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ProfiloWebPage(
-                                    utentiApi: widget.utentiApi,
-                                    userId: widget.userId,
-                                    dio: widget.dio,
-                                    authApi: widget.authApi,
-                                    segnalazioniApi: widget.segnalazioniApi,
-                                    entiApi: widget.entiApi,
-                                    commentiApi: widget.commentiApi,
-                                  ),
-                                ),
-                              );
-                            },
+                        const SizedBox(width: 8),
+                        Text(
+                          "Dashboard Segnalazioni",
+                          style: GoogleFonts.manrope(
+                            fontSize: isMobile ? 24 : 32,
+                            fontWeight: FontWeight.bold,
+                            foreground: Paint()
+                              ..shader = LinearGradient(
+                                colors: [Color(0xFF00BFA5), Color(0xFF00FFC1)],
+                              ).createShader(Rect.fromLTWH(0, 0, 300, 0)),
+                            shadows: [
+                              Shadow(
+                                offset: Offset(2, 2),
+                                blurRadius: 4,
+                                color: Colors.black38,
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  Expanded(
-                    child: RefreshIndicator(
-                      onRefresh: _refreshReports,
-                      child: FutureBuilder<List<SegnalazioneOutput>>(
-                        future: futureReports,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                              child: CircularProgressIndicator(
-                                color: Color(0xFF00BFA5),
-                              ),
-                            );
-                          }
-                          if (error != null) {
-                            return Center(
-                              child: Text(
-                                error!.message ??
-                                    "Errore durante il caricamento",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
+                    // qui il resto del Row: logout e avatar
+                    Row(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _logout,
+                          icon: const Icon(Icons.logout),
+                          label: const Text("Logout"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            foregroundColor: Colors.white,
+                            elevation: 3,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ProfiloWebPage(
+                                  utentiApi: widget.utentiApi,
+                                  userId: widget.userId,
+                                  dio: widget.dio,
+                                  authApi: widget.authApi,
+                                  segnalazioniApi: widget.segnalazioniApi,
+                                  entiApi: widget.entiApi,
+                                  commentiApi: widget.commentiApi,
                                 ),
-                                textAlign: TextAlign.center,
                               ),
                             );
-                          }
-                          final items = snapshot.data ?? [];
-                          if (items.isEmpty) {
-                            return const Center(
-                              child: Text(
-                                "Non ci sono segnalazioni da mostrare",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            );
-                          }
-                          return ListView.builder(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: items.length,
-                            itemBuilder: (context, i) => Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: _SegnalazioneCardWeb(
-                                segnalazione: items[i],
+                          },
+                          borderRadius: BorderRadius.circular(50),
+                          child: CircleAvatar(
+                            radius: 24,
+                            backgroundColor: Colors.white,
+                            child: const Icon(
+                              Icons.person,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // CONTENT
+                Expanded(
+                  child: FutureBuilder<List<SegnalazioneOutput>>(
+                    future: futureReports,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF00BFA5),
+                          ),
+                        );
+                      }
+
+                      if (error != null) {
+                        return Center(
+                          child: Text(
+                            error!.message ?? "Errore",
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        );
+                      }
+
+                      final reports = snapshot.data ?? [];
+
+                      if (reports.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            "Nessuna segnalazione disponibile",
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 18,
+                            ),
+                          ),
+                        );
+                      }
+
+                      // Responsive: due colonne su desktop
+                      if (!isMobile && screenWidth > 1200) {
+                        return Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: FlutterMapWidget(
+                                segnalazioni: reports,
                                 utentiApi: widget.utentiApi,
                                 userId: widget.userId,
                                 dio: widget.dio,
@@ -321,14 +252,168 @@ class _HomeWebPageState extends State<HomeWebPage>
                                 onRefresh: _refreshReports,
                               ),
                             ),
-                          );
-                        },
-                      ),
-                    ),
+                            const SizedBox(width: 24),
+                            Expanded(
+                              flex: 1,
+                              child: ListView.builder(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                                itemCount: reports.length,
+                                itemBuilder: (context, i) => Padding(
+                                  padding: const EdgeInsets.only(
+                                    bottom: 16,
+                                  ), // spazio tra card
+                                  child: _SegnalazioneCardWeb(
+                                    segnalazione: reports[i],
+                                    utentiApi: widget.utentiApi,
+                                    userId: widget.userId,
+                                    dio: widget.dio,
+                                    authApi: widget.authApi,
+                                    segnalazioniApi: widget.segnalazioniApi,
+                                    entiApi: widget.entiApi,
+                                    commentiApi: widget.commentiApi,
+                                    onRefresh: _refreshReports,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+
+                      // Mobile / tablet layout: colonna unica
+                      return Column(
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: FlutterMapWidget(
+                              segnalazioni: reports,
+                              utentiApi: widget.utentiApi,
+                              userId: widget.userId,
+                              dio: widget.dio,
+                              authApi: widget.authApi,
+                              segnalazioniApi: widget.segnalazioniApi,
+                              entiApi: widget.entiApi,
+                              commentiApi: widget.commentiApi,
+                              onRefresh: _refreshReports,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Expanded(
+                            flex: 1,
+                            child: ListView.builder(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              itemCount: reports.length,
+                              itemBuilder: (context, i) => _SegnalazioneCardWeb(
+                                segnalazione: reports[i],
+                                utentiApi: widget.utentiApi,
+                                userId: widget.userId,
+                                dio: widget.dio,
+                                authApi: widget.authApi,
+                                segnalazioniApi: widget.segnalazioniApi,
+                                entiApi: widget.entiApi,
+                                commentiApi: widget.commentiApi,
+                                onRefresh: _refreshReports,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class FlutterMapWidget extends StatelessWidget {
+  final List<SegnalazioneOutput> segnalazioni;
+  final UtentiApi utentiApi;
+  final AuthApi authApi;
+  final Dio dio;
+  final int userId;
+  final SegnalazioniApi segnalazioniApi;
+  final EntiApi entiApi;
+  final CommentiApi commentiApi;
+  final Future<void> Function()? onRefresh;
+
+  const FlutterMapWidget({
+    super.key,
+    required this.segnalazioni,
+    required this.utentiApi,
+    required this.userId,
+    required this.dio,
+    required this.authApi,
+    required this.segnalazioniApi,
+    required this.entiApi,
+    required this.commentiApi,
+    this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final valid = segnalazioni
+        .where((s) => s.latitudine != null && s.longitudine != null)
+        .toList();
+
+    if (valid.isEmpty) {
+      return const Center(
+        child: Text(
+          "Nessuna segnalazione sulla mappa",
+          style: TextStyle(color: Colors.white),
+        ),
+      );
+    }
+
+    final first = valid.first;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: FlutterMap(
+        options: MapOptions(
+          center: LatLng(first.latitudine!, first.longitudine!),
+          zoom: 12,
+        ),
+        children: [
+          TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.example.app',
+          ),
+          MarkerLayer(
+            markers: valid.map((s) {
+              return Marker(
+                point: LatLng(s.latitudine!, s.longitudine!),
+                width: 40,
+                height: 40,
+                child: IconButton(
+                  icon: const Icon(Icons.location_on, color: Colors.red),
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => DettaglioSegnalazioneWebPage(
+                          utentiApi: utentiApi,
+                          userId: userId,
+                          segnalazioneId: s.id!,
+                          dio: dio,
+                          authApi: authApi,
+                          segnalazioniApi: segnalazioniApi,
+                          entiApi: entiApi,
+                          commentiApi: commentiApi,
+                        ),
+                      ),
+                    );
+                    if (result == true) await onRefresh?.call();
+                  },
+                ),
+              );
+            }).toList(),
           ),
         ],
       ),
@@ -365,16 +450,16 @@ class _SegnalazioneCardWeb extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = segnalazione;
     return Material(
-      elevation: 6,
+      elevation: 10,
       shadowColor: Colors.black.withOpacity(0.3),
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: () async {
-          /* if (s.id != null) {
+          if (s.id != null) {
             final result = await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => DettaglioSegnalazionePage(
+                builder: (_) => DettaglioSegnalazioneWebPage(
                   utentiApi: utentiApi,
                   userId: userId,
                   segnalazioneId: s.id!,
@@ -387,11 +472,11 @@ class _SegnalazioneCardWeb extends StatelessWidget {
               ),
             );
             if (result == true && onRefresh != null) await onRefresh?.call();
-          }*/
+          }
         },
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: const Color(0xFF0B3D35),
             borderRadius: BorderRadius.circular(20),
@@ -443,84 +528,6 @@ class _SegnalazioneCardWeb extends StatelessWidget {
     );
   }
 
-  Widget _buildMappa(double lat, double lng) {
-    final mapController = MapController();
-
-    return Container(
-      height: 250,
-      margin: const EdgeInsets.symmetric(vertical: 16),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
-      clipBehavior: Clip.hardEdge,
-      child: Stack(
-        children: [
-          FlutterMap(
-            mapController: mapController,
-            options: MapOptions(
-              initialCenter: LatLng(lat, lng),
-              initialZoom: 15,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.all,
-              ),
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-                userAgentPackageName: 'com.example.scheletro',
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: LatLng(lat, lng),
-                    width: 50,
-                    height: 50,
-                    child: const Icon(
-                      Icons.location_on,
-                      color: Colors.red,
-                      size: 40,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          // --------- Pulsanti zoom ----------
-          Positioned(
-            right: 8,
-            bottom: 8,
-            child: Column(
-              children: [
-                FloatingActionButton(
-                  mini: true,
-                  heroTag: "zoom_in",
-                  onPressed: () {
-                    mapController.move(
-                      mapController.center,
-                      mapController.zoom + 1,
-                    );
-                  },
-                  child: const Icon(Icons.add),
-                ),
-                const SizedBox(height: 8),
-                FloatingActionButton(
-                  mini: true,
-                  heroTag: "zoom_out",
-                  onPressed: () {
-                    mapController.move(
-                      mapController.center,
-                      mapController.zoom - 1,
-                    );
-                  },
-                  child: const Icon(Icons.remove),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBadge(StatoEnum? stato) {
     final colorBg =
         {
@@ -567,6 +574,7 @@ class _SegnalazioneCardWeb extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _CircleData {
   double size;
   double left;

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'homePage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -31,13 +33,13 @@ class _LoginPageState extends State<LoginPage>
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final formKey = GlobalKey<FormState>();
-
   bool isLoading = false;
   String? loginError;
 
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
-  late Animation<double> _logoScale;
+  final Random _random = Random();
+  final List<_CircleData> _circles = [];
 
   @override
   void initState() {
@@ -45,179 +47,82 @@ class _LoginPageState extends State<LoginPage>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 900),
     );
 
-    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-
-    _logoScale = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
-
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    );
     _controller.forward();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final size = MediaQuery.of(context).size;
+      for (int i = 0; i < 30; i++) {
+        _circles.add(
+          _CircleData(
+            size: 20 + _random.nextDouble() * 50,
+            left: _random.nextDouble() * size.width,
+            top: _random.nextDouble() * size.height,
+            opacity: 0.02 + _random.nextDouble() * 0.05,
+            speedX: (_random.nextDouble() - 0.5) * 0.2,
+            speedY: (_random.nextDouble() - 0.5) * 0.2,
+          ),
+        );
+      }
+      _animate();
+    });
+  }
+
+  void _animate() {
+    final size = MediaQuery.of(context).size;
+    _controller.addListener(() {
+      setState(() {
+        for (final c in _circles) {
+          c.left += c.speedX;
+          c.top += c.speedY;
+          if (c.left < 0 || c.left > size.width - c.size) c.speedX *= -1;
+          if (c.top < 0 || c.top > size.height - c.size) c.speedY *= -1;
+        }
+      });
+    });
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    emailController.dispose();
+    passwordController.dispose();
     super.dispose();
   }
 
   Widget _buildButton({
-    required String text,
-    required VoidCallback onPressed,
+    required String label,
+    required VoidCallback onTap,
     required bool isPrimary,
   }) {
-    final backgroundColor = isPrimary ? Colors.green.shade700 : Colors.white;
-    final borderColor = isPrimary
-        ? Colors.green.shade800
-        : Colors.green.shade700;
-    final textColor = isPrimary ? Colors.white : Colors.green.shade800;
+    final bgColor = isPrimary
+        ? const Color(0xFF00BFA5)
+        : Colors.white.withOpacity(0.1);
+    final fgColor = isPrimary ? Colors.white : Colors.white70;
 
     return SizedBox(
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
+        onPressed: isLoading ? null : onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: BorderSide(color: borderColor, width: 1.5),
-          ),
+          backgroundColor: bgColor,
+          foregroundColor: fgColor,
           elevation: 6,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.white.withOpacity(0.3)),
+          ),
         ),
         child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: textColor,
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final gradientColors = [
-      Color(0xFFe0f2f1),
-      Color(0xFFb2dfdb),
-      Color(0xFF80cbc4),
-    ];
-
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: gradientColors,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ScaleTransition(
-                    scale: _logoScale,
-                    child: Image.asset(
-                      'assets/images/LOGO.png',
-                      width: 120,
-                      height: 120,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    "Accedi a EcoAlert!",
-                    style: TextStyle(
-                      fontFamily: "Poppins",
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      foreground: Paint()
-                        ..shader =
-                            LinearGradient(
-                              colors: [
-                                Colors.green.shade800,
-                                Colors.green.shade600,
-                              ],
-                            ).createShader(
-                              const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0),
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Form(
-                    key: formKey,
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: emailController,
-                          decoration: const InputDecoration(
-                            labelText: "Email",
-                            prefixIcon: Icon(Icons.email),
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) => (value == null || value.isEmpty)
-                              ? "Inserisci una email"
-                              : null,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: passwordController,
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            labelText: "Password",
-                            prefixIcon: Icon(Icons.lock),
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) => (value == null || value.isEmpty)
-                              ? "Inserisci una password"
-                              : null,
-                        ),
-                        if (loginError != null) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            loginError!,
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 24),
-                        _buildButton(
-                          text: "Accedi",
-                          onPressed: _login,
-                          isPrimary: true,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildButton(
-                          text: "Non hai un account? Registrati",
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    SignInPage(authApi: widget.authApi),
-                              ),
-                            );
-                          },
-                          isPrimary: false,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          label,
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
       ),
     );
@@ -226,9 +131,7 @@ class _LoginPageState extends State<LoginPage>
   Future _login() async {
     if (!formKey.currentState!.validate()) return;
 
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
     try {
       final response = await widget.authApi.login(
@@ -241,7 +144,6 @@ class _LoginPageState extends State<LoginPage>
 
       final ruolo = response.data?.ruolo;
 
-      // MOBILE → solo cittadini
       if (!kIsWeb && ruolo != "cittadino") {
         await _showErrorDialog(
           "Accesso negato: gli enti non possono accedere da mobile.",
@@ -249,15 +151,6 @@ class _LoginPageState extends State<LoginPage>
         return;
       }
 
-      // WEB → solo enti
-      if (kIsWeb && ruolo != "ente") {
-        await _showErrorDialog(
-          "Accesso negato: i cittadini non possono accedere da web.",
-        );
-        return;
-      }
-
-      // LOGIN SUCCESS → vai a HomePage
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -286,15 +179,10 @@ class _LoginPageState extends State<LoginPage>
       }
       await _showErrorDialog(message);
     } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
-  // Funzione helper per errori in login
   Future<void> _showErrorDialog(String message) async {
     await showDialog(
       context: context,
@@ -302,10 +190,10 @@ class _LoginPageState extends State<LoginPage>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: Colors.red.shade50,
         title: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 32),
-            const SizedBox(width: 12),
-            const Expanded(
+          children: const [
+            Icon(Icons.error_outline, color: Colors.red, size: 32),
+            SizedBox(width: 12),
+            Expanded(
               child: Text(
                 "Errore",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -313,11 +201,7 @@ class _LoginPageState extends State<LoginPage>
             ),
           ],
         ),
-        content: Text(
-          message,
-          style: const TextStyle(fontSize: 16),
-          softWrap: true,
-        ),
+        content: Text(message, style: const TextStyle(fontSize: 16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -333,4 +217,195 @@ class _LoginPageState extends State<LoginPage>
       ),
     );
   }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool obscure = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscure,
+      validator: (v) => (v == null || v.isEmpty) ? "Campo obbligatorio" : null,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white70),
+        prefixIcon: Icon(icon, color: Colors.white70),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.08),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF00BFA5), width: 2),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 650;
+    final logoSize = isMobile ? 100.0 : 140.0;
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Sfondo verde scuro
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF0F2F2B),
+                  Color(0xFF0B3D35),
+                  Color(0xFF0A4A40),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+
+          // Cerchi animati
+          ..._circles.map(
+            (c) => Positioned(
+              left: c.left,
+              top: c.top,
+              child: Container(
+                width: c.size,
+                height: c.size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      Colors.white.withOpacity(c.opacity),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          Center(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 40,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Cerchio bianco dietro logo
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 20,
+                          ),
+                        ],
+                      ),
+                      child: Image.asset(
+                        'assets/images/LOGO.png',
+                        width: logoSize,
+                        height: logoSize,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      "Accedi a EcoAlert",
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    Form(
+                      key: formKey,
+                      child: Column(
+                        children: [
+                          _buildTextField(
+                            controller: emailController,
+                            label: "Email",
+                            icon: Icons.email,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            controller: passwordController,
+                            label: "Password",
+                            icon: Icons.lock,
+                            obscure: true,
+                          ),
+                          if (loginError != null) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              loginError!,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 24),
+                          _buildButton(
+                            label: "Accedi",
+                            onTap: _login,
+                            isPrimary: true,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildButton(
+                            label: "Non hai un account? Registrati",
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    SignInPage(authApi: widget.authApi),
+                              ),
+                            ),
+                            isPrimary: false,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ignore: unused_element
+class _CircleData {
+  double size;
+  double left;
+  double top;
+  double opacity;
+  double speedX;
+  double speedY;
+
+  _CircleData({
+    required this.size,
+    required this.left,
+    required this.top,
+    required this.opacity,
+    required this.speedX,
+    required this.speedY,
+  });
 }
