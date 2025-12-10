@@ -1,20 +1,23 @@
+import 'package:eco_alert/web/Page/HomeWebPage.dart';
+import 'package:eco_alert/web/Page/LoginWebPage.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../mobile/Page/homePage.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:openapi/openapi.dart';
 
-// PAGINE
+// PAGINE MOBILE
 import '../../mobile/Page/welcomePage.dart';
 import '../../mobile/Page/loginPage.dart';
 import '../../mobile/Page/signInPage.dart';
 
+import '../../web/Page/WelcomeWebPage.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Carica variabili d'ambiente
   await dotenv.load(fileName: ".env");
-
   runApp(const MyApp());
 }
 
@@ -38,7 +41,6 @@ class MyApp extends StatelessWidget {
       );
     }
 
-    // Configurazione Dio
     final dio = Dio(
       BaseOptions(
         baseUrl: apiUrl,
@@ -47,7 +49,6 @@ class MyApp extends StatelessWidget {
       ),
     );
 
-    // API generate da OpenAPI
     final authApi = AuthApi(dio, standardSerializers);
     final utentiApi = UtentiApi(dio, standardSerializers);
     final segnalazioniApi = SegnalazioniApi(dio, standardSerializers);
@@ -58,9 +59,8 @@ class MyApp extends StatelessWidget {
       title: 'EcoAlert',
       debugShowCheckedModeBanner: false,
 
-      // 🔥 ROUTER
       routes: {
-        '/welcome': (_) => WelcomePage(
+        '/welcomeMobile': (_) => WelcomePage(
           authApi: authApi,
           utentiApi: utentiApi,
           dio: dio,
@@ -68,7 +68,7 @@ class MyApp extends StatelessWidget {
           entiApi: entiApi,
           commentiApi: commentiApi,
         ),
-        '/login': (_) => LoginPage(
+        '/loginMobile': (_) => LoginPage(
           authApi: authApi,
           utentiApi: utentiApi,
           dio: dio,
@@ -76,8 +76,8 @@ class MyApp extends StatelessWidget {
           entiApi: entiApi,
           commentiApi: commentiApi,
         ),
-        '/signup': (_) => SignInPage(authApi: authApi),
-        '/home': (_) => HomePage(
+        '/signupMobile': (_) => SignInPage(authApi: authApi),
+        '/homeMobile': (_) => HomePage(
           authApi: authApi,
           utentiApi: utentiApi,
           dio: dio,
@@ -85,11 +85,38 @@ class MyApp extends StatelessWidget {
           segnalazioniApi: segnalazioniApi,
           entiApi: entiApi,
           commentiApi: commentiApi,
-        ), // Aggiungi questa riga con userId appropriato
+        ),
+
+        // ✅ ROUTE WEB
+        '/WelcomeWeb': (_) => WelcomeWebPage(
+          authApi: authApi,
+          utentiApi: utentiApi,
+          dio: dio,
+          segnalazioniApi: segnalazioniApi,
+          entiApi: entiApi,
+          commentiApi: commentiApi,
+        ),
+        '/LoginWeb': (_) => LoginWebPage(
+          authApi: authApi,
+          utentiApi: utentiApi,
+          dio: dio,
+          segnalazioniApi: segnalazioniApi,
+          entiApi: entiApi,
+          commentiApi: commentiApi,
+        ),
+        '/HomeWeb': (_) => HomeWebPage(
+          utentiApi: utentiApi,
+          dio: dio,
+          authApi: authApi,
+          segnalazioniApi: segnalazioniApi,
+          entiApi: entiApi,
+          commentiApi: commentiApi,
+          userId: 0,
+        ),
       },
 
-      // 🔥 Pagina iniziale
-      initialRoute: '/welcome',
+      // ✅ UNA SOLA initialRoute
+      initialRoute: kIsWeb ? '/WelcomeWeb' : '/welcomeMobile',
     );
   }
 }
