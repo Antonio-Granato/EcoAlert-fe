@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:openapi/openapi.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -33,9 +35,20 @@ class DettaglioSegnalazionePage extends StatefulWidget {
 
 class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
   late Future<SegnalazioneOutput?> futureSegnalazione;
-  Error? error;
 
   final TextEditingController _commentoController = TextEditingController();
+  final TextEditingController _editTitoloController = TextEditingController();
+  final TextEditingController _editDescrizioneController =
+      TextEditingController();
+  final TextEditingController _editSearchController = TextEditingController();
+  final MapController _editMapController = MapController();
+
+  LatLng? _editSelectedPosition;
+  List<dynamic> _editSearchResults = [];
+  Timer? _editDebounce;
+  double _editZoom = 15;
+  Error? error;
+  void Function(void Function())? _modalSetState;
 
   @override
   void initState() {
@@ -47,6 +60,48 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
     setState(() {
       futureSegnalazione = _loadDettaglio();
     });
+  }
+
+  @override
+  void dispose() {
+    _editDebounce?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _editSearchAddress(String query) async {
+    if (!mounted) return;
+
+    final q = query.trim();
+    if (q.isEmpty) {
+      _modalSetState?.call(() {
+        _editSearchResults.clear();
+      });
+      return;
+    }
+
+    try {
+      final response = await Dio().get(
+        'https://nominatim.openstreetmap.org/search',
+        queryParameters: {
+          'q': q,
+          'format': 'json',
+          'addressdetails': 1,
+          'limit': 5,
+        },
+        options: Options(headers: {'User-Agent': 'com.example.scheletro'}),
+      );
+
+      final data = response.data;
+      if (data is List) {
+        _modalSetState?.call(() {
+          _editSearchResults = List<Map<String, dynamic>>.from(data);
+        });
+      }
+    } catch (_) {
+      _modalSetState?.call(() {
+        _editSearchResults.clear();
+      });
+    }
   }
 
   Future<SegnalazioneOutput?> _loadDettaglio() async {
@@ -171,19 +226,155 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
   }
 
   Future<void> _modificaSegnalazione() async {
+    final segnalazione = await futureSegnalazione;
+    if (segnalazione == null) return;
+
+    // Precarico i dati
+    _editTitoloController.text = segnalazione.titolo ?? "";
+    _editDescrizioneController.text = segnalazione.descrizione ?? "";
+    _editSelectedPosition = LatLng(
+      segnalazione.latitudine ?? 45.4642,
+      segnalazione.longitudine ?? 9.1900,
+    );
+
     final conferma = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Conferma modifica"),
-        content: const Text("Vuoi davvero modificare questa segnalazione?"),
+        title: const Text("Modifica Segnalazione"),
+        content: StatefulBuilder(
+          builder: (ctx, setModalState) {
+            _modalSetState = setModalState;
+            return SizedBox(
+              width: double.maxFinite,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Titolo
+                    TextField(
+                      controller: _editTitoloController,
+                      decoration: const InputDecoration(labelText: "Titolo"),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Descrizione
+                    TextField(
+                      controller: _editDescrizioneController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: "Descrizione",
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Barra di ricerca
+                    TextField(
+                      controller: _editSearchController,
+                      decoration: const InputDecoration(
+                        labelText: "Cerca indirizzo",
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                      onChanged: (value) {
+                        if (_editDebounce?.isActive ?? false) {
+                          _editDebounce!.cancel();
+                        }
+
+                        _editDebounce = Timer(
+                          const Duration(milliseconds: 400),
+                          () {
+                            _editSearchAddress(value);
+                          },
+                        );
+                      },
+                    ),
+
+                    if (_editSearchResults.isNotEmpty)
+                      Container(
+                        margin: const EdgeInsets.only(top: 6),
+                        constraints: const BoxConstraints(maxHeight: 180),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _editSearchResults.length,
+                          itemBuilder: (context, index) {
+                            final item = _editSearchResults[index];
+                            final name = item['display_name'] ?? '';
+
+                            return ListTile(
+                              title: Text(name),
+                              onTap: () {
+                                final lat = double.tryParse(item['lat'] ?? '');
+                                final lon = double.tryParse(item['lon'] ?? '');
+
+                                if (lat == null || lon == null) return;
+
+                                final pos = LatLng(lat, lon);
+
+                                setState(() {
+                                  _editSelectedPosition = pos;
+                                  _editSearchResults.clear();
+                                  _editSearchController.text = name;
+                                });
+
+                                _editMapController.move(pos, 16);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+
+                    const SizedBox(height: 12),
+
+                    // Mappa
+                    SizedBox(
+                      height: 200,
+                      child: FlutterMap(
+                        mapController: _editMapController,
+                        options: MapOptions(
+                          initialCenter: _editSelectedPosition!,
+                          initialZoom: _editZoom,
+                          onTap: (tapPosition, latLng) {
+                            setModalState(() {
+                              _editSelectedPosition = latLng;
+                            });
+                          },
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                            userAgentPackageName: 'com.example.scheletro',
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: _editSelectedPosition!,
+                                width: 40,
+                                height: 40,
+                                child: const Icon(
+                                  Icons.location_on,
+                                  color: Colors.red,
+                                  size: 32,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text("Annulla"),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("Modifica"),
+            child: const Text("Salva"),
           ),
         ],
       ),
@@ -192,7 +383,23 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
     if (conferma != true) return;
 
     try {
-      // Aggiorniamo lo stato della pagina
+      final input = SegnalazioneInput(
+        (b) => b
+          ..titolo = _editTitoloController.text.trim().isEmpty
+              ? null
+              : _editTitoloController.text.trim()
+          ..descrizione = _editDescrizioneController.text.trim()
+          ..latitudine = _editSelectedPosition!.latitude
+          ..longitudine = _editSelectedPosition!.longitude
+          ..idEnte = segnalazione.idEnte,
+      );
+
+      await widget.segnalazioniApi.updateSegnalazione(
+        id: widget.userId,
+        idSegnalazione: widget.segnalazioneId,
+        segnalazioneInput: input,
+      );
+
       _refreshSegnalazione();
 
       if (!mounted) return;
@@ -201,11 +408,26 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
       );
     } on DioException catch (ex) {
       int code = ex.response?.statusCode ?? 500;
-      String message = "Errore durante la modifica della segnalazione";
+      String msg = "Errore durante la modifica";
+
       if (ex.response?.data is Map) {
-        message = (ex.response!.data as Map)['message']?.toString() ?? message;
+        msg = (ex.response!.data as Map)['message']?.toString() ?? msg;
       }
-      await _showErrorDialog("Errore $code: $message");
+
+      setState(() {
+        error = Error(
+          (b) => b
+            ..code = code
+            ..message = msg,
+        );
+      });
+
+      await _showErrorDialog("Errore $code: $msg");
+    } catch (_) {
+      setState(() {
+        error = Error((b) => b..message = "Errore imprevisto");
+      });
+      await _showErrorDialog("Errore imprevisto durante la modifica");
     }
   }
 

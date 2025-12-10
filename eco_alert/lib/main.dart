@@ -1,13 +1,13 @@
-import 'package:eco_alert/presentation/mobile/Page/homePage.dart';
+import '../../mobile/Page/homePage.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:openapi/openapi.dart';
 
 // PAGINE
-import 'package:eco_alert/presentation/mobile/Page/welcomePage.dart';
-import 'package:eco_alert/presentation/mobile/Page/loginPage.dart';
-import 'package:eco_alert/presentation/mobile/Page/signInPage.dart';
+import '../../mobile/Page/welcomePage.dart';
+import '../../mobile/Page/loginPage.dart';
+import '../../mobile/Page/signInPage.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
