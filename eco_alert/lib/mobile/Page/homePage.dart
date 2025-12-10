@@ -1,10 +1,10 @@
-import 'package:eco_alert/presentation/mobile/Page/creaSegnalazionePage.dart';
-import 'package:eco_alert/presentation/mobile/Page/profiloPage.dart';
+import 'creaSegnalazionePage.dart';
+import 'profiloPage.dart';
 import 'package:flutter/material.dart';
 import 'package:openapi/openapi.dart';
 import 'package:dio/dio.dart';
-import 'package:eco_alert/presentation/mobile/Page/dettaglioSegnalazionePage.dart';
-import 'package:eco_alert/presentation/mobile/Page/welcomePage.dart';
+import 'dettaglioSegnalazionePage.dart';
+import 'welcomePage.dart';
 
 class HomePage extends StatefulWidget {
   final Dio dio;
