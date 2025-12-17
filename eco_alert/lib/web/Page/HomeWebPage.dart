@@ -46,32 +46,24 @@ class _HomeWebPageState extends State<HomeWebPage> {
     _refreshReports();
   }
 
+  Future<List<SegnalazioneOutput>> _loadReports() async {
+    final res = await widget.utentiApi.getSegnalazioniByUserId(
+      id: widget.userId,
+    );
+    return List<SegnalazioneOutput>.from(res.data ?? []);
+  }
+
   Future<void> _refreshReports() async {
     try {
-      final res = await widget.utentiApi.getSegnalazioniByUserId(
-        id: widget.userId,
-      );
+      final reports = await _loadReports();
       setState(() {
-        futureReports = Future.value(
-          List<SegnalazioneOutput>.from(res.data ?? []),
-        );
+        futureReports = Future.value(reports);
         error = null;
       });
-    } on DioException catch (ex) {
+    } catch (e) {
       setState(() {
-        error = Error(
-          (b) => b
-            ..code = ex.response?.statusCode ?? 0
-            ..message =
-                (ex.response?.data as Map?)?['message'] ??
-                "Errore caricamento segnalazioni",
-        );
         futureReports = Future.value([]);
-      });
-    } catch (_) {
-      setState(() {
-        error = Error((b) => b..message = "Errore imprevisto");
-        futureReports = Future.value([]);
+        error = Error((b) => b..message = "Errore caricamento segnalazioni");
       });
     }
   }
