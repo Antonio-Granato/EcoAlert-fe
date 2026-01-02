@@ -6,7 +6,7 @@
 build/
 coverage/
 doc/api/
-api/*/
+api/api/
 
 # Android
 android/.gradle/
