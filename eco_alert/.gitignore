@@ -6,6 +6,7 @@
 build/
 coverage/
 doc/api/
+api/*/
 
 # Android
 android/.gradle/
@@ -37,3 +38,4 @@ windows/flutter/ephemeral/
 .idea/
 *.iml
 *.log
+

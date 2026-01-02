@@ -15,8 +15,128 @@ tags:
     description: Informazioni sugli utenti
   - name: Commenti
     description: Gestione dei commenti
+  - name: Allegati
+    description: Gestione immagini e file associati alle segnalazioni
 
 paths:
+
+  /segnalazioni/{idSegnalazione}/allegato:
+    post:
+      tags:
+        - Allegati
+      summary: Carica un'immagine per una segnalazione
+      operationId: uploadAllegato
+
+      parameters:
+        - name: idSegnalazione
+          in: path
+          required: true
+          schema:
+            type: integer
+
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+
+      responses:
+        '201':
+          description: Allegato caricato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllegatoOutput'
+
+  /segnalazioni/{idSegnalazione}/allegati:
+    get:
+      tags:
+        - Allegati
+      summary: Ottiene la lista degli allegati di una segnalazione
+      operationId: getAllegatiBySegnalazione
+      parameters:
+        - name: idSegnalazione
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista allegati
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AllegatoOutput'
+        '404':
+          description: Segnalazione non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /allegati/{idAllegato}:
+    get:
+      tags:
+        - Allegati
+      summary: Scarica un allegato
+      operationId: downloadAllegato
+      parameters:
+        - name: idAllegato
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: File binario
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Allegato non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /allegati/{idAllegato}/allegato:
+    delete:
+      tags:
+        - Allegati
+      summary: Elimina un allegato
+      operationId: deleteAllegato
+      parameters:
+        - name: idAllegato
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Allegato eliminato
+        '403':
+          description: Utente non autorizzato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Allegato non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /user/{id}/segnalazione/{idSegnalazione}/commenti:
     post:
@@ -593,6 +713,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CommentoOutput'
+        allegati:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllegatoOutput'
 
     UtenteDettaglioOutput:
       type: object
@@ -676,3 +800,20 @@ components:
           type: string
         idUtente:
           type: integer
+
+    AllegatoOutput:
+      type: object
+      properties:
+        id:
+          type: integer
+        idSegnalazione:
+          type: integer
+        nomeFile:
+          type: string
+        contentType:
+          type: string
+        dataCaricamento:
+          type: string
+          format: date-time
+
+

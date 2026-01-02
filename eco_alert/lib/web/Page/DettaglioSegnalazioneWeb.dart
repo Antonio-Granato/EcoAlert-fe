@@ -400,6 +400,34 @@ class _DettaglioSegnalazioneWebPageState
             ],
           ),
         ),
+
+        if (s.allegati != null && s.allegati!.isNotEmpty)
+          _sectionWidget(
+            "Allegati",
+            Column(
+              children: s.allegati!.map((c) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        "- ${c.nomeFile}",
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                    if (s.idUtente == widget.userId)
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.redAccent),
+                        onPressed: () => _deleteCommento(c.id!),
+                      ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
       ],
     );
   }
