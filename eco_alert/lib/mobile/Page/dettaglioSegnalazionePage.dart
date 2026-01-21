@@ -191,7 +191,7 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
 
     if (image == null) {
-      print("Nessuna immagine selezionata");
+      print("Nessuna immagine selezionata!");
       return;
     }
   }
