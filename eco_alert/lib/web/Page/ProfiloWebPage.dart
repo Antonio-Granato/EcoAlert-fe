@@ -14,6 +14,7 @@ class ProfiloWebPage extends StatefulWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
 
   const ProfiloWebPage({
     super.key,
@@ -24,6 +25,7 @@ class ProfiloWebPage extends StatefulWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
   });
 
   @override
@@ -113,6 +115,7 @@ class _ProfiloWebPageState extends State<ProfiloWebPage>
             segnalazioniApi: widget.segnalazioniApi,
             entiApi: widget.entiApi,
             commentiApi: widget.commentiApi,
+            allegatiApi: widget.allegatiApi,
           ),
         ),
         (route) => false,
@@ -281,6 +284,7 @@ class _ProfiloWebPageState extends State<ProfiloWebPage>
                                       entiApi: widget.entiApi,
                                       commentiApi: widget.commentiApi,
                                       userId: widget.userId,
+                                      allegatiApi: widget.allegatiApi,
                                     ),
                                   ),
                                 );

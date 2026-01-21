@@ -16,6 +16,7 @@ class LoginPage extends StatefulWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
   });
   final AuthApi authApi;
   final UtentiApi utentiApi;
@@ -23,6 +24,7 @@ class LoginPage extends StatefulWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -162,6 +164,7 @@ class _LoginPageState extends State<LoginPage>
             segnalazioniApi: widget.segnalazioniApi,
             entiApi: widget.entiApi,
             commentiApi: widget.commentiApi,
+            allegatiApi: widget.allegatiApi,
           ),
         ),
       );

@@ -55,6 +55,7 @@ class MyApp extends StatelessWidget {
     final segnalazioniApi = SegnalazioniApi(dio, standardSerializers);
     final entiApi = EntiApi(dio, standardSerializers);
     final commentiApi = CommentiApi(dio, standardSerializers);
+    final allegatiApi = AllegatiApi(dio, standardSerializers);
 
     return MaterialApp(
       title: 'EcoAlert',
@@ -68,6 +69,7 @@ class MyApp extends StatelessWidget {
           segnalazioniApi: segnalazioniApi,
           entiApi: entiApi,
           commentiApi: commentiApi,
+          allegatiApi: allegatiApi,
         ),
         '/loginMobile': (_) => LoginPage(
           authApi: authApi,
@@ -76,6 +78,7 @@ class MyApp extends StatelessWidget {
           segnalazioniApi: segnalazioniApi,
           entiApi: entiApi,
           commentiApi: commentiApi,
+          allegatiApi: allegatiApi,
         ),
         '/signupMobile': (_) => SignInPage(authApi: authApi),
         '/homeMobile': (_) => HomePage(
@@ -86,6 +89,7 @@ class MyApp extends StatelessWidget {
           segnalazioniApi: segnalazioniApi,
           entiApi: entiApi,
           commentiApi: commentiApi,
+          allegatiApi: allegatiApi,
         ),
 
         // ✅ ROUTE WEB
@@ -96,6 +100,7 @@ class MyApp extends StatelessWidget {
           segnalazioniApi: segnalazioniApi,
           entiApi: entiApi,
           commentiApi: commentiApi,
+          allegatiApi: allegatiApi,
         ),
         '/LoginWeb': (_) => LoginWebPage(
           authApi: authApi,
@@ -104,6 +109,7 @@ class MyApp extends StatelessWidget {
           segnalazioniApi: segnalazioniApi,
           entiApi: entiApi,
           commentiApi: commentiApi,
+          allegatiApi: allegatiApi,
         ),
         '/SignInWeb': (_) => SignInWebPage(
           authApi: authApi,
@@ -112,6 +118,7 @@ class MyApp extends StatelessWidget {
           segnalazioniApi: segnalazioniApi,
           entiApi: entiApi,
           commentiApi: commentiApi,
+          allegatiApi: allegatiApi,
         ),
         '/HomeWeb': (_) => HomeWebPage(
           utentiApi: utentiApi,
@@ -120,6 +127,7 @@ class MyApp extends StatelessWidget {
           segnalazioniApi: segnalazioniApi,
           entiApi: entiApi,
           commentiApi: commentiApi,
+          allegatiApi: allegatiApi,
           userId: 0,
         ),
       },

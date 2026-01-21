@@ -14,6 +14,7 @@ class LoginWebPage extends StatefulWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
 
   const LoginWebPage({
     super.key,
@@ -23,6 +24,7 @@ class LoginWebPage extends StatefulWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
   });
 
   @override
@@ -176,6 +178,7 @@ class _LoginWebPageState extends State<LoginWebPage>
             segnalazioniApi: widget.segnalazioniApi,
             entiApi: widget.entiApi,
             commentiApi: widget.commentiApi,
+            allegatiApi: widget.allegatiApi,
           ),
         ),
       );
@@ -350,6 +353,7 @@ class _LoginWebPageState extends State<LoginWebPage>
                                     segnalazioniApi: widget.segnalazioniApi,
                                     entiApi: widget.entiApi,
                                     commentiApi: widget.commentiApi,
+                                    allegatiApi: widget.allegatiApi,
                                   ),
                                 ),
                               ),

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:eco_alert/web/Page/WelcomeWebPage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -8,7 +9,6 @@ import 'package:openapi/openapi.dart';
 
 import 'DettaglioSegnalazioneWeb.dart';
 import 'ProfiloWebPage.dart';
-import 'welcomeWebPage.dart';
 
 class HomeWebPage extends StatefulWidget {
   final Dio dio;
@@ -18,6 +18,7 @@ class HomeWebPage extends StatefulWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
 
   const HomeWebPage({
     super.key,
@@ -28,6 +29,7 @@ class HomeWebPage extends StatefulWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
   });
 
   @override
@@ -79,6 +81,7 @@ class _HomeWebPageState extends State<HomeWebPage> {
           segnalazioniApi: widget.segnalazioniApi,
           entiApi: widget.entiApi,
           commentiApi: widget.commentiApi,
+          allegatiApi: widget.allegatiApi,
         ),
       ),
       (_) => false,
@@ -169,6 +172,7 @@ class _HomeWebPageState extends State<HomeWebPage> {
                                   segnalazioniApi: widget.segnalazioniApi,
                                   entiApi: widget.entiApi,
                                   commentiApi: widget.commentiApi,
+                                  allegatiApi: widget.allegatiApi,
                                 ),
                               ),
                             );
@@ -241,6 +245,7 @@ class _HomeWebPageState extends State<HomeWebPage> {
                                 segnalazioniApi: widget.segnalazioniApi,
                                 entiApi: widget.entiApi,
                                 commentiApi: widget.commentiApi,
+                                allegatiApi: widget.allegatiApi,
                                 onRefresh: _refreshReports,
                               ),
                             ),
@@ -265,6 +270,7 @@ class _HomeWebPageState extends State<HomeWebPage> {
                                     segnalazioniApi: widget.segnalazioniApi,
                                     entiApi: widget.entiApi,
                                     commentiApi: widget.commentiApi,
+                                    allegatiApi: widget.allegatiApi,
                                     onRefresh: _refreshReports,
                                   ),
                                 ),
@@ -288,6 +294,7 @@ class _HomeWebPageState extends State<HomeWebPage> {
                               segnalazioniApi: widget.segnalazioniApi,
                               entiApi: widget.entiApi,
                               commentiApi: widget.commentiApi,
+                              allegatiApi: widget.allegatiApi,
                               onRefresh: _refreshReports,
                             ),
                           ),
@@ -306,6 +313,7 @@ class _HomeWebPageState extends State<HomeWebPage> {
                                 segnalazioniApi: widget.segnalazioniApi,
                                 entiApi: widget.entiApi,
                                 commentiApi: widget.commentiApi,
+                                allegatiApi: widget.allegatiApi,
                                 onRefresh: _refreshReports,
                               ),
                             ),
@@ -333,6 +341,7 @@ class FlutterMapWidget extends StatelessWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
   final Future<void> Function()? onRefresh;
 
   const FlutterMapWidget({
@@ -345,6 +354,7 @@ class FlutterMapWidget extends StatelessWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
     this.onRefresh,
   });
 
@@ -398,6 +408,7 @@ class FlutterMapWidget extends StatelessWidget {
                           segnalazioniApi: segnalazioniApi,
                           entiApi: entiApi,
                           commentiApi: commentiApi,
+                          allegatiApi: allegatiApi,
                         ),
                       ),
                     );
@@ -423,6 +434,7 @@ class _SegnalazioneCardWeb extends StatelessWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
   final Future<void> Function()? onRefresh;
 
   const _SegnalazioneCardWeb({
@@ -434,6 +446,7 @@ class _SegnalazioneCardWeb extends StatelessWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
     this.onRefresh,
     Key? key,
   }) : super(key: key);
@@ -460,6 +473,7 @@ class _SegnalazioneCardWeb extends StatelessWidget {
                   segnalazioniApi: segnalazioniApi,
                   entiApi: entiApi,
                   commentiApi: commentiApi,
+                  allegatiApi: allegatiApi,
                 ),
               ),
             );

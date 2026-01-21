@@ -14,6 +14,7 @@ class DettaglioSegnalazioneWebPage extends StatefulWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
 
   const DettaglioSegnalazioneWebPage({
     super.key,
@@ -25,6 +26,7 @@ class DettaglioSegnalazioneWebPage extends StatefulWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
   });
 
   @override
@@ -40,6 +42,8 @@ class _DettaglioSegnalazioneWebPageState
   final _dittaController = TextEditingController();
   final _commentoController = TextEditingController();
   bool _loadingComment = false;
+  // ignore: unused_field
+  bool _loadingAperturaAllegato = false;
 
   @override
   void initState() {
@@ -113,6 +117,43 @@ class _DettaglioSegnalazioneWebPageState
         message = (ex.response!.data as Map)['message']?.toString() ?? message;
       }
       await _showErrorDialog("Errore $code: $message");
+    }
+  }
+
+  // Funzione per aprire allegato
+  Future<void> _apriAllegato(int idAllegato) async {
+    setState(() {
+      _loadingAperturaAllegato = true;
+    });
+
+    try {
+      final response = await widget.allegatiApi.downloadAllegato(
+        idAllegato: idAllegato,
+      );
+
+      showDialog(
+        context: context,
+        builder: (_) => Dialog(
+          backgroundColor: Colors.black,
+          insetPadding: const EdgeInsets.all(16),
+          child: InteractiveViewer(
+            child: Image.memory(response.data!, fit: BoxFit.contain),
+          ),
+        ),
+      );
+    } on DioException catch (ex) {
+      int code = ex.response?.statusCode ?? 500;
+      String message = "Errore durante il download dell'allegato";
+      if (ex.response?.data is Map) {
+        message = (ex.response!.data as Map)['message']?.toString() ?? message;
+      }
+      await _showErrorDialog("Errore $code: $message");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingAperturaAllegato = false;
+        });
+      }
     }
   }
 
@@ -406,24 +447,42 @@ class _DettaglioSegnalazioneWebPageState
             "Allegati",
             Column(
               children: s.allegati!.map((c) {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        "- ${c.nomeFile}",
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          height: 1.5,
-                        ),
+                return Card(
+                  color: Colors.grey.shade900,
+                  margin: const EdgeInsets.symmetric(vertical: 6),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () {
+                      // esempio: apri immagine
+                      _apriAllegato(c.id!);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.image, color: Colors.white70),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              c.nomeFile ?? 'Allegato',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          if (s.idUtente == widget.userId)
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete,
+                                color: Colors.redAccent,
+                              ),
+                              onPressed: () => _deleteCommento(c.id!),
+                            ),
+                        ],
                       ),
                     ),
-                    if (s.idUtente == widget.userId)
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.redAccent),
-                        onPressed: () => _deleteCommento(c.id!),
-                      ),
-                  ],
+                  ),
                 );
               }).toList(),
             ),

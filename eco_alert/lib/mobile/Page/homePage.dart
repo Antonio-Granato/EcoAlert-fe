@@ -14,6 +14,7 @@ class HomePage extends StatefulWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
 
   const HomePage({
     super.key,
@@ -24,6 +25,7 @@ class HomePage extends StatefulWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
   });
 
   @override
@@ -106,6 +108,7 @@ class _HomePageState extends State<HomePage>
           segnalazioniApi: widget.segnalazioniApi,
           entiApi: widget.entiApi,
           commentiApi: widget.commentiApi,
+          allegatiApi: widget.allegatiApi,
         ),
       ),
       (route) => false,
@@ -203,6 +206,7 @@ class _HomePageState extends State<HomePage>
                                   segnalazioniApi: widget.segnalazioniApi,
                                   entiApi: widget.entiApi,
                                   commentiApi: widget.commentiApi,
+                                  allegatiApi: widget.allegatiApi,
                                 ),
                               ),
                             );
@@ -302,6 +306,7 @@ class _HomePageState extends State<HomePage>
                               segnalazioniApi: widget.segnalazioniApi,
                               entiApi: widget.entiApi,
                               commentiApi: widget.commentiApi,
+                              allegatiApi: widget.allegatiApi,
                               onRefresh: _refreshReports,
                             ),
                           ),
@@ -331,6 +336,7 @@ class _SegnalazioneCard extends StatelessWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
   final Future<void> Function()? onRefresh;
 
   const _SegnalazioneCard({
@@ -342,6 +348,7 @@ class _SegnalazioneCard extends StatelessWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
     this.onRefresh,
     Key? key,
   }) : super(key: key);
@@ -369,6 +376,7 @@ class _SegnalazioneCard extends StatelessWidget {
                   segnalazioniApi: segnalazioniApi,
                   entiApi: entiApi,
                   commentiApi: commentiApi,
+                  allegatiApi: allegatiApi,
                 ),
               ),
             );

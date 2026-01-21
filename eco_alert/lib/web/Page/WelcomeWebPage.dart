@@ -13,6 +13,7 @@ class WelcomeWebPage extends StatefulWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
 
   const WelcomeWebPage({
     super.key,
@@ -22,6 +23,7 @@ class WelcomeWebPage extends StatefulWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
   });
 
   @override
@@ -286,6 +288,7 @@ class _WelcomeWebPageState extends State<WelcomeWebPage>
                                 segnalazioniApi: widget.segnalazioniApi,
                                 entiApi: widget.entiApi,
                                 commentiApi: widget.commentiApi,
+                                allegatiApi: widget.allegatiApi,
                               ),
                             ),
                           );
@@ -307,6 +310,7 @@ class _WelcomeWebPageState extends State<WelcomeWebPage>
                                 segnalazioniApi: widget.segnalazioniApi,
                                 entiApi: widget.entiApi,
                                 commentiApi: widget.commentiApi,
+                                allegatiApi: widget.allegatiApi,
                               ),
                             ),
                           );

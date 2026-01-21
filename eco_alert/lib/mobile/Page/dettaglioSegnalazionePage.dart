@@ -1,10 +1,10 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:openapi/openapi.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 
 class DettaglioSegnalazionePage extends StatefulWidget {
   final UtentiApi utentiApi;
@@ -15,6 +15,7 @@ class DettaglioSegnalazionePage extends StatefulWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
 
   const DettaglioSegnalazionePage({
     super.key,
@@ -26,6 +27,7 @@ class DettaglioSegnalazionePage extends StatefulWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
   });
 
   @override
@@ -47,6 +49,8 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
   List<dynamic> _editSearchResults = [];
   Timer? _editDebounce;
   double _editZoom = 15;
+  // ignore: unused_field
+  bool _loadingAperturaAllegato = false;
   Error? error;
   void Function(void Function())? _modalSetState;
 
@@ -179,6 +183,17 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
         ],
       ),
     );
+  }
+
+  Future<void> pickAndUploadImage() async {
+    // 1. Seleziona immagine dalla galleria
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    if (image == null) {
+      print("Nessuna immagine selezionata");
+      return;
+    }
   }
 
   // ========= Commenti =========
@@ -507,6 +522,43 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
     }
   }
 
+  // Funzione per creare commento
+  Future<void> _apriAllegato(int idAllegato) async {
+    setState(() {
+      _loadingAperturaAllegato = true;
+    });
+
+    try {
+      final response = await widget.allegatiApi.downloadAllegato(
+        idAllegato: idAllegato,
+      );
+
+      showDialog(
+        context: context,
+        builder: (_) => Dialog(
+          backgroundColor: Colors.black,
+          insetPadding: const EdgeInsets.all(16),
+          child: InteractiveViewer(
+            child: Image.memory(response.data!, fit: BoxFit.contain),
+          ),
+        ),
+      );
+    } on DioException catch (ex) {
+      int code = ex.response?.statusCode ?? 500;
+      String message = "Errore durante il download dell'allegato";
+      if (ex.response?.data is Map) {
+        message = (ex.response!.data as Map)['message']?.toString() ?? message;
+      }
+      await _showErrorDialog("Errore $code: $message");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingAperturaAllegato = false;
+        });
+      }
+    }
+  }
+
   Widget _buildMappa(double lat, double lng) {
     final mapController = MapController();
 
@@ -774,6 +826,63 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                                 segnalazione.latitudine!,
                                 segnalazione.longitudine!,
                               ),
+
+                            const SizedBox(height: 16),
+                            if (segnalazione.allegati != null &&
+                                segnalazione.allegati!.isNotEmpty) ...[
+                              const Text(
+                                "Allegati",
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              ...segnalazione.allegati!.map(
+                                (c) => Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        "- ${c.nomeFile}",
+                                        style: const TextStyle(fontSize: 15),
+                                      ),
+                                    ),
+                                    if (segnalazione.idUtente == widget.userId)
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.looks,
+                                          color: Colors.green,
+                                        ),
+                                        onPressed: () => _apriAllegato(c.id!),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: ElevatedButton(
+                                onPressed: pickAndUploadImage,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color.fromARGB(
+                                    255,
+                                    30,
+                                    78,
+                                    33,
+                                  ),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text("Aggiungi allegato"),
+                              ),
+                            ),
+
                             const SizedBox(height: 16),
                             if (segnalazione.commenti != null &&
                                 segnalazione.commenti!.isNotEmpty) ...[
@@ -808,6 +917,7 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                               ),
                               const SizedBox(height: 16),
                             ],
+
                             const Text(
                               "Aggiungi un commento",
                               style: TextStyle(

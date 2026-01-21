@@ -13,6 +13,7 @@ class SignInWebPage extends StatefulWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
 
   const SignInWebPage({
     super.key,
@@ -22,6 +23,7 @@ class SignInWebPage extends StatefulWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
   });
 
   @override
@@ -446,6 +448,7 @@ class _SignInWebPageState extends State<SignInWebPage>
                                       segnalazioniApi: widget.segnalazioniApi,
                                       entiApi: widget.entiApi,
                                       commentiApi: widget.commentiApi,
+                                      allegatiApi: widget.allegatiApi,
                                     ),
                                   ),
                                 ),
