@@ -191,8 +191,72 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
 
     if (image == null) {
-      print("Nessuna immagine selezionata!");
       return;
+    }
+
+    try {
+      final file = await MultipartFile.fromFile(
+        image.path,
+        filename: image.name,
+      );
+
+      // 2. Carica tramite client OpenAPI
+      await widget.allegatiApi.uploadAllegato(
+        idSegnalazione: widget.segnalazioneId,
+        file: file,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Allegato caricato con successo")),
+      );
+
+      _refreshSegnalazione();
+    } on DioException catch (ex) {
+      int code = ex.response?.statusCode ?? 500;
+      String message = "Errore durante il caricamento dell'allegato";
+      if (ex.response?.data is Map) {
+        message = (ex.response!.data as Map)['message']?.toString() ?? message;
+      }
+      await _showErrorDialog("Errore $code: $message");
+    } catch (_) {
+      await _showErrorDialog("Errore imprevisto durante l'upload");
+    }
+  }
+
+  Future<void> _deleteAllegato(int idAllegato) async {
+    final conferma = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Conferma eliminazione allegato"),
+        content: const Text("Vuoi davvero eliminare questo allegato?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Annulla"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Elimina"),
+          ),
+        ],
+      ),
+    );
+
+    if (conferma != true) return;
+
+    try {
+      await widget.allegatiApi.deleteAllegato(idAllegato: idAllegato);
+      _refreshSegnalazione();
+    } on DioException catch (ex) {
+      int code = ex.response?.statusCode ?? 500;
+      String message = "Errore durante l'eliminazione dell'allegato";
+      if (ex.response?.data is Map) {
+        message = (ex.response!.data as Map)['message']?.toString() ?? message;
+      }
+      await _showErrorDialog("Errore $code: $message");
+    } catch (_) {
+      await _showErrorDialog("Errore imprevisto durante la cancellazione");
     }
   }
 
@@ -849,12 +913,26 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                                       ),
                                     ),
                                     if (segnalazione.idUtente == widget.userId)
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.looks,
-                                          color: Colors.green,
-                                        ),
-                                        onPressed: () => _apriAllegato(c.id!),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.looks,
+                                              color: Colors.green,
+                                            ),
+                                            onPressed: () =>
+                                                _apriAllegato(c.id!),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.delete,
+                                              color: Colors.red,
+                                            ),
+                                            onPressed: () =>
+                                                _deleteAllegato(c.id!),
+                                          ),
+                                        ],
                                       ),
                                   ],
                                 ),

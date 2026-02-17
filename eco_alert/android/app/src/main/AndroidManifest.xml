@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Permessi per accesso alle immagini (Android 13+ usa READ_MEDIA_IMAGES)
+         Aggiungi anche CAMERA se utilizzi la fotocamera per scattare foto. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.CAMERA" />
     <application
         android:label="scheletro"
         android:name="${applicationName}"
