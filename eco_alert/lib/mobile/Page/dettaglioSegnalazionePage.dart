@@ -552,40 +552,6 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
     }
   }
 
-  // ========= Badge stato =========
-  String _statoToString(StatoEnum? stato) =>
-      stato?.name.replaceAll("_", " ").toUpperCase() ?? "SCONOSCIUTO";
-
-  Color _badgeColor(StatoEnum? stato) {
-    switch (stato) {
-      case StatoEnum.INSERITO:
-        return Colors.green.shade100;
-      case StatoEnum.PRESO_IN_CARICO:
-        return Colors.blue.shade100;
-      case StatoEnum.SOSPESO:
-        return Colors.yellow.shade100;
-      case StatoEnum.CHIUSO:
-        return Colors.red.shade300;
-      default:
-        return Colors.grey.shade100;
-    }
-  }
-
-  IconData _statoIcon(StatoEnum? stato) {
-    switch (stato) {
-      case StatoEnum.INSERITO:
-        return Icons.fiber_new_rounded;
-      case StatoEnum.PRESO_IN_CARICO:
-        return Icons.work_rounded;
-      case StatoEnum.SOSPESO:
-        return Icons.pause_circle_filled_rounded;
-      case StatoEnum.CHIUSO:
-        return Icons.check_circle_rounded;
-      default:
-        return Icons.help_outline;
-    }
-  }
-
   // Funzione per creare commento
   Future<void> _apriAllegato(int idAllegato) async {
     setState(() {
@@ -621,6 +587,155 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
         });
       }
     }
+  }
+
+  // ======== ALLEGATI INTERATTIVI ========
+  Widget _buildAllegatiDarkInteractive(SegnalazioneOutput s) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Allegati",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.add_a_photo, color: Colors.white70),
+              onPressed: pickAndUploadImage,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (s.allegati != null && s.allegati!.isNotEmpty)
+          ...s.allegati!.map(
+            (a) => Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    "- ${a.nomeFile}",
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.open_in_new, color: Colors.white70),
+                  onPressed: () => _apriAllegato(a.id!),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                  onPressed: () => _deleteAllegato(a.id!),
+                ),
+              ],
+            ),
+          ),
+        if (s.allegati == null || s.allegati!.isEmpty)
+          const Text(
+            "Nessun allegato",
+            style: TextStyle(color: Colors.white38),
+          ),
+      ],
+    );
+  }
+
+  // ======== COMMENTI INTERATTIVI ========
+  Widget _buildCommentiDarkInteractive(SegnalazioneOutput s) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Commenti",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (s.commenti != null && s.commenti!.isNotEmpty)
+          ...s.commenti!.map(
+            (c) => Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    "- ${c.descrizione}",
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                ),
+                // Mostra l’icona solo se si può eliminare
+                if (c.idUtente == s.idUtente)
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                    onPressed: () => _deleteCommento(c.id!),
+                  ),
+              ],
+            ),
+          ),
+        if (s.commenti == null || s.commenti!.isEmpty)
+          const Text(
+            "Nessun commento",
+            style: TextStyle(color: Colors.white38),
+          ),
+
+        const SizedBox(height: 12),
+
+        // Barra inserimento commento
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _commentoController,
+                style: const TextStyle(color: Colors.white70),
+                decoration: InputDecoration(
+                  hintText: "Scrivi un commento...",
+                  hintStyle: TextStyle(color: Colors.white38),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  fillColor: Colors.white.withOpacity(0.1),
+                  filled: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                ),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.send, color: Colors.white70),
+              onPressed: _creaCommento,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDarkBadge(StatoEnum? stato) {
+    final label = stato?.name.toUpperCase() ?? "SCONOSCIUTO";
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white70,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
   }
 
   Widget _buildMappa(double lat, double lng) {
@@ -703,75 +818,43 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
 
   @override
   Widget build(BuildContext context) {
-    final gradientColors = [
-      const Color(0xFFe0f2f1),
-      const Color(0xFFb2dfdb),
-      const Color(0xFF80cbc4),
-    ];
-
     return Scaffold(
-      backgroundColor: Colors.green.shade50,
-      appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 30, 78, 33),
-        title: const Text(
-          "Dettaglio Segnalazione",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onSelected: (value) {
-              if (value == 'delete') {
-                _deleteSegnalazione();
-              } else if (value == 'edit') {
-                _modificaSegnalazione();
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit, color: Colors.blue),
-                    SizedBox(width: 8),
-                    Text("Modifica segnalazione"),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text("Elimina segnalazione"),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: Stack(
         children: [
+          // -------- BACKGROUND GRADIENT (come Home) --------
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: gradientColors,
+                colors: [
+                  Color(0xFF0F2F2B),
+                  Color(0xFF0B3D35),
+                  Color(0xFF0A4A40),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
             ),
           ),
+
           SafeArea(
             child: FutureBuilder<SegnalazioneOutput?>(
               future: futureSegnalazione,
               builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 3,
+                    ),
+                  );
+                }
+
                 if (error != null) {
                   return Center(
                     child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 24),
                       padding: const EdgeInsets.all(16),
+                      margin: const EdgeInsets.symmetric(horizontal: 32),
                       decoration: BoxDecoration(
                         color: Colors.red.shade600,
                         borderRadius: BorderRadius.circular(12),
@@ -788,257 +871,164 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                   );
                 }
 
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: Colors.green),
-                  );
-                }
-
                 final segnalazione = snapshot.data;
                 if (segnalazione == null) {
                   return const Center(
                     child: Text(
-                      "Segnalazione non trovata.",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      "Segnalazione non trovata",
+                      style: TextStyle(color: Colors.white, fontSize: 18),
                     ),
                   );
                 }
 
-                return Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Material(
-                    elevation: 6,
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.95),
-                        borderRadius: BorderRadius.circular(20),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // -------- HEADER --------
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 20,
                       ),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Header
-                            Row(
+                      child: Row(
+                        children: [
+                          // Back button
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.arrow_back,
+                                color: Colors.white70,
+                              ),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ),
+
+                          const SizedBox(width: 16),
+
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                CircleAvatar(
-                                  radius: 22,
-                                  backgroundColor: _badgeColor(
-                                    segnalazione.stato,
-                                  ).withOpacity(0.3),
-                                  child: Icon(
-                                    _statoIcon(segnalazione.stato),
-                                    color: Colors.black,
-                                    size: 24,
+                                Text(
+                                  segnalazione.titolo ?? "Segnalazione",
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        segnalazione.titolo ?? "Segnalazione",
-                                        style: const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: _badgeColor(
-                                            segnalazione.stato,
-                                          ).withOpacity(0.2),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          _statoToString(segnalazione.stato),
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                const SizedBox(height: 4),
+                                const Text(
+                                  "Dettaglio completo",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.white70,
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              segnalazione.descrizione ??
-                                  "Nessuna descrizione fornita",
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                            const SizedBox(height: 16),
-                            // ===== MAPPA =====
-                            if (segnalazione.latitudine != null &&
-                                segnalazione.longitudine != null)
-                              _buildMappa(
-                                segnalazione.latitudine!,
-                                segnalazione.longitudine!,
-                              ),
+                          ),
 
-                            const SizedBox(height: 16),
-                            if (segnalazione.allegati != null &&
-                                segnalazione.allegati!.isNotEmpty) ...[
-                              const Text(
-                                "Allegati",
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.bold,
+                          PopupMenuButton<String>(
+                            color: const Color(0xFF0F2F2B),
+                            icon: const Icon(
+                              Icons.more_vert,
+                              color: Colors.white70,
+                            ),
+                            onSelected: (value) {
+                              if (value == 'delete') {
+                                _deleteSegnalazione();
+                              } else if (value == 'edit') {
+                                _modificaSegnalazione();
+                              }
+                            },
+                            itemBuilder: (context) => const [
+                              PopupMenuItem(
+                                value: 'edit',
+                                child: Text(
+                                  "Modifica",
+                                  style: TextStyle(color: Colors.white),
                                 ),
                               ),
-                              const SizedBox(height: 6),
-                              ...segnalazione.allegati!.map(
-                                (c) => Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        "- ${c.nomeFile}",
-                                        style: const TextStyle(fontSize: 15),
-                                      ),
-                                    ),
-                                    if (segnalazione.idUtente == widget.userId)
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.looks,
-                                              color: Colors.green,
-                                            ),
-                                            onPressed: () =>
-                                                _apriAllegato(c.id!),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.delete,
-                                              color: Colors.red,
-                                            ),
-                                            onPressed: () =>
-                                                _deleteAllegato(c.id!),
-                                          ),
-                                        ],
-                                      ),
-                                  ],
+                              PopupMenuItem(
+                                value: 'delete',
+                                child: Text(
+                                  "Elimina",
+                                  style: TextStyle(color: Colors.white),
                                 ),
                               ),
-                              const SizedBox(height: 16),
                             ],
+                          ),
+                        ],
+                      ),
+                    ),
 
-                            const SizedBox(height: 8),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: ElevatedButton(
-                                onPressed: pickAndUploadImage,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color.fromARGB(
-                                    255,
-                                    30,
-                                    78,
-                                    33,
-                                  ),
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: const Text("Aggiungi allegato"),
-                              ),
+                    // -------- CONTENUTO --------
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.06),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.12),
                             ),
-
-                            const SizedBox(height: 16),
-                            if (segnalazione.commenti != null &&
-                                segnalazione.commenti!.isNotEmpty) ...[
-                              const Text(
-                                "Commenti",
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.35),
+                                blurRadius: 25,
+                                offset: const Offset(0, 10),
                               ),
-                              const SizedBox(height: 6),
-                              ...segnalazione.commenti!.map(
-                                (c) => Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        "- ${c.descrizione}",
-                                        style: const TextStyle(fontSize: 15),
-                                      ),
-                                    ),
-                                    if (c.idUtente == widget.userId)
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.delete,
-                                          color: Colors.red,
-                                        ),
-                                        onPressed: () => _deleteCommento(c.id!),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 16),
                             ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // BADGE STATO
+                              _buildDarkBadge(segnalazione.stato),
 
-                            const Text(
-                              "Aggiungi un commento",
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            TextField(
-                              controller: _commentoController,
-                              decoration: InputDecoration(
-                                hintText: "Scrivi un commento...",
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                              const SizedBox(height: 16),
+
+                              // DESCRIZIONE
+                              Text(
+                                segnalazione.descrizione ??
+                                    "Nessuna descrizione",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
                                 ),
                               ),
-                              maxLines: 2,
-                            ),
-                            const SizedBox(height: 8),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: ElevatedButton(
-                                onPressed: _creaCommento,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color.fromARGB(
-                                    255,
-                                    30,
-                                    78,
-                                    33,
-                                  ),
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+
+                              const SizedBox(height: 20),
+
+                              // MAPPA
+                              if (segnalazione.latitudine != null &&
+                                  segnalazione.longitudine != null)
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: _buildMappa(
+                                    segnalazione.latitudine!,
+                                    segnalazione.longitudine!,
                                   ),
                                 ),
-                                child: const Text("Invia"),
-                              ),
-                            ),
-                          ],
+
+                              const SizedBox(height: 20),
+                              _buildAllegatiDarkInteractive(segnalazione),
+
+                              const SizedBox(height: 20),
+                              _buildCommentiDarkInteractive(segnalazione),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 );
               },
             ),
