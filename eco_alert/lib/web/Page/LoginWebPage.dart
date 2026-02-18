@@ -1,6 +1,5 @@
 import 'dart:math';
-import 'package:eco_alert/web/Page/HomeWebPage.dart';
-import 'package:eco_alert/web/Page/SignInWebPage.dart';
+import 'package:eco_alert/utils/web_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -167,21 +166,12 @@ class _LoginWebPageState extends State<LoginWebPage>
         return;
       }
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => HomeWebPage(
-            utentiApi: widget.utentiApi,
-            userId: response.data!.userId!,
-            dio: widget.dio,
-            authApi: widget.authApi,
-            segnalazioniApi: widget.segnalazioniApi,
-            entiApi: widget.entiApi,
-            commentiApi: widget.commentiApi,
-            allegatiApi: widget.allegatiApi,
-          ),
-        ),
-      );
+      // Naviga a HomeWeb includendo userId nella query string così il reload conserva l'utente
+      final routeName = '/HomeWeb?userId=${response.data!.userId!}';
+      // salva userId e route per garantire restore su Invio/refresh
+      WebStorage.setUserId(response.data!.userId!);
+      WebStorage.setLastRoute(routeName);
+      Navigator.pushReplacementNamed(context, routeName);
     } catch (ex) {
       String message = "Si è verificato un errore. Riprova.";
       if (ex is DioException) {
@@ -343,20 +333,8 @@ class _LoginWebPageState extends State<LoginWebPage>
                             const SizedBox(height: 12),
                             // Pulsante secondario login
                             TextButton(
-                              onPressed: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => SignInWebPage(
-                                    authApi: widget.authApi,
-                                    utentiApi: widget.utentiApi,
-                                    dio: widget.dio,
-                                    segnalazioniApi: widget.segnalazioniApi,
-                                    entiApi: widget.entiApi,
-                                    commentiApi: widget.commentiApi,
-                                    allegatiApi: widget.allegatiApi,
-                                  ),
-                                ),
-                              ),
+                              onPressed: () =>
+                                  Navigator.pushNamed(context, '/SignInWeb'),
                               child: Text(
                                 "Non hai un account?, Registrati.",
                                 style: TextStyle(

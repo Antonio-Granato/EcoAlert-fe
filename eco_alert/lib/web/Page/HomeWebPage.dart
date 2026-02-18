@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:eco_alert/web/Page/WelcomeWebPage.dart';
+import 'package:eco_alert/utils/web_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -7,7 +7,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:dio/dio.dart';
 import 'package:openapi/openapi.dart';
 
-import 'DettaglioSegnalazioneWeb.dart';
 import 'ProfiloWebPage.dart';
 
 class HomeWebPage extends StatefulWidget {
@@ -71,21 +70,8 @@ class _HomeWebPageState extends State<HomeWebPage> {
   }
 
   void _logout() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (_) => WelcomeWebPage(
-          dio: widget.dio,
-          authApi: widget.authApi,
-          utentiApi: widget.utentiApi,
-          segnalazioniApi: widget.segnalazioniApi,
-          entiApi: widget.entiApi,
-          commentiApi: widget.commentiApi,
-          allegatiApi: widget.allegatiApi,
-        ),
-      ),
-      (_) => false,
-    );
+    WebStorage.clearAll();
+    Navigator.pushNamedAndRemoveUntil(context, '/WelcomeWeb', (_) => false);
   }
 
   @override
@@ -396,22 +382,9 @@ class FlutterMapWidget extends StatelessWidget {
                 child: IconButton(
                   icon: const Icon(Icons.location_on, color: Colors.red),
                   onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => DettaglioSegnalazioneWebPage(
-                          utentiApi: utentiApi,
-                          userId: userId,
-                          segnalazioneId: s.id!,
-                          dio: dio,
-                          authApi: authApi,
-                          segnalazioniApi: segnalazioniApi,
-                          entiApi: entiApi,
-                          commentiApi: commentiApi,
-                          allegatiApi: allegatiApi,
-                        ),
-                      ),
-                    );
+                    final route =
+                        '/DettaglioWeb?userId=$userId&segnalazioneId=${s.id}';
+                    final result = await Navigator.pushNamed(context, route);
                     if (result == true) await onRefresh?.call();
                   },
                 ),
@@ -461,22 +434,8 @@ class _SegnalazioneCardWeb extends StatelessWidget {
       child: InkWell(
         onTap: () async {
           if (s.id != null) {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => DettaglioSegnalazioneWebPage(
-                  utentiApi: utentiApi,
-                  userId: userId,
-                  segnalazioneId: s.id!,
-                  dio: dio,
-                  authApi: authApi,
-                  segnalazioniApi: segnalazioniApi,
-                  entiApi: entiApi,
-                  commentiApi: commentiApi,
-                  allegatiApi: allegatiApi,
-                ),
-              ),
-            );
+            final route = '/DettaglioWeb?userId=$userId&segnalazioneId=${s.id}';
+            final result = await Navigator.pushNamed(context, route);
             if (result == true && onRefresh != null) await onRefresh?.call();
           }
         },
