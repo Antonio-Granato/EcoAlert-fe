@@ -245,8 +245,12 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
   }
 
   Widget _buildMappa() {
+    final h = MediaQuery.of(context).size.height;
+    final mapHeight = h * 0.28; // responsive height
+    final clampHeight = mapHeight.clamp(200.0, 360.0);
+
     return Container(
-      height: 250,
+      height: clampHeight,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade300),
@@ -326,228 +330,356 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColors = [
-      const Color(0xFFe0f2f1),
-      const Color(0xFFb2dfdb),
-      const Color(0xFF80cbc4),
-    ];
-
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 30, 78, 33),
-        title: const Text(
-          "Crea Segnalazione",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ), // scritta bianca
-        ),
-        centerTitle: true,
-      ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: backgroundColors,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      body: Stack(
+        children: [
+          // background gradient come Home/Dettaglio
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF0F2F2B),
+                  Color(0xFF0B3D35),
+                  Color(0xFF0A4A40),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: _loading
-              ? const Center(
-                  child: CircularProgressIndicator(color: Colors.green),
-                )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Card(
-                    elevation: 3,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Form(
-                        key: _formKey,
+
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // header simile a Home/Dettaglio
+                  Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white70,
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            TextFormField(
-                              controller: _titoloController,
-                              decoration: const InputDecoration(
-                                labelText: "Titolo",
+                            Text(
+                              "Crea Segnalazione",
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            TextFormField(
-                              controller: _descrizioneController,
-                              decoration: const InputDecoration(
-                                labelText: "Descrizione",
-                              ),
-                              validator: (v) => v == null || v.isEmpty
-                                  ? "La descrizione è obbligatoria"
-                                  : null,
-                              maxLines: 3,
-                            ),
-                            const SizedBox(height: 12),
-
-                            TextFormField(
-                              controller: _searchController,
-                              decoration: InputDecoration(
-                                labelText: "Cerca indirizzo o via",
-                                prefixIcon: const Icon(Icons.search),
-                                suffixIcon: _searchController.text.isNotEmpty
-                                    ? IconButton(
-                                        icon: const Icon(Icons.clear),
-                                        onPressed: () {
-                                          _searchController.clear();
-                                          setState(() {
-                                            _searchResults = [];
-                                          });
-                                        },
-                                      )
-                                    : null,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              onChanged: (value) {
-                                if (_debounce?.isActive ?? false)
-                                  _debounce!.cancel();
-
-                                _debounce = Timer(
-                                  const Duration(milliseconds: 700),
-                                  () {
-                                    _searchAddress(value);
-                                  },
-                                );
-                              },
-                            ),
-
-                            if (_searchResults.isNotEmpty)
-                              Container(
-                                margin: const EdgeInsets.only(top: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 5,
-                                    ),
-                                  ],
-                                ),
-                                child: ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: _searchResults.length,
-                                  itemBuilder: (context, index) {
-                                    final item = _searchResults[index];
-                                    return ListTile(
-                                      title: Text(item['display_name']),
-                                      onTap: () {
-                                        final lat = double.parse(item['lat']);
-                                        final lon = double.parse(item['lon']);
-
-                                        final pos = LatLng(lat, lon);
-
-                                        setState(() {
-                                          _selectedPosition = pos;
-                                          _searchResults = [];
-                                          _searchController.text =
-                                              item['display_name'];
-                                        });
-
-                                        _mapController.move(pos, 16);
-                                      },
-                                    );
-                                  },
-                                ),
-                              ),
-
-                            const SizedBox(height: 12),
-                            const Text(
-                              "Seleziona posizione sulla mappa",
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-
-                            const SizedBox(height: 8),
-
-                            Container(
-                              height: 250,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: Colors.grey.shade300),
-                              ),
-                              clipBehavior: Clip.hardEdge,
-                              child: Stack(
-                                children: [
-                                  const SizedBox(height: 12),
-                                  const Text(
-                                    "Seleziona posizione sulla mappa",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  _buildMappa(),
-                                ],
-                              ),
-                            ),
-
-                            const SizedBox(height: 12),
-                            DropdownButtonFormField<int>(
-                              value: _selectedEnteId,
-                              items: _enti
-                                  .map(
-                                    (e) => DropdownMenuItem(
-                                      value: e.id,
-                                      child: Text(e.nomeEnte ?? 'Ente ${e.id}'),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (v) =>
-                                  setState(() => _selectedEnteId = v),
-                              decoration: const InputDecoration(
-                                labelText: "Ente",
-                              ),
-                              validator: (v) =>
-                                  v == null ? "Seleziona un ente" : null,
-                            ),
-                            const SizedBox(height: 24),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color.fromARGB(
-                                  255,
-                                  30,
-                                  78,
-                                  33,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                  horizontal: 24,
-                                ),
-                              ),
-                              onPressed: _submit,
-                              child: const Text(
-                                "Crea Segnalazione",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+                            SizedBox(height: 4),
+                            Text(
+                              "Segnala una criticità nel tuo territorio",
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.white70,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ),
-        ),
+
+                  const SizedBox(height: 20),
+
+                  // card contenente form con stile come Dettaglio, centrata e con maxWidth
+                  _loading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
+                        )
+                      : Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 720),
+                            child: Container(
+                              padding: const EdgeInsets.all(22),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.06),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.12),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.35),
+                                    blurRadius: 25,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: Form(
+                                key: _formKey,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Titolo
+                                    TextFormField(
+                                      controller: _titoloController,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      decoration: InputDecoration(
+                                        labelText: "Titolo",
+                                        labelStyle: const TextStyle(
+                                          color: Colors.white70,
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(
+                                          0.03,
+                                        ),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 14),
+
+                                    // Descrizione
+                                    TextFormField(
+                                      controller: _descrizioneController,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      decoration: InputDecoration(
+                                        labelText: "Descrizione",
+                                        labelStyle: const TextStyle(
+                                          color: Colors.white70,
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(
+                                          0.03,
+                                        ),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                      ),
+                                      validator: (v) => v == null || v.isEmpty
+                                          ? "La descrizione è obbligatoria"
+                                          : null,
+                                      maxLines: 3,
+                                    ),
+                                    const SizedBox(height: 14),
+
+                                    // Search
+                                    TextFormField(
+                                      controller: _searchController,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      decoration: InputDecoration(
+                                        labelText: "Cerca indirizzo o via",
+                                        labelStyle: const TextStyle(
+                                          color: Colors.white70,
+                                        ),
+                                        prefixIcon: const Icon(
+                                          Icons.search,
+                                          color: Colors.white70,
+                                        ),
+                                        suffixIcon:
+                                            _searchController.text.isNotEmpty
+                                            ? IconButton(
+                                                icon: const Icon(
+                                                  Icons.clear,
+                                                  color: Colors.white70,
+                                                ),
+                                                onPressed: () {
+                                                  _searchController.clear();
+                                                  setState(() {
+                                                    _searchResults = [];
+                                                  });
+                                                },
+                                              )
+                                            : null,
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(
+                                          0.03,
+                                        ),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                      ),
+                                      onChanged: (value) {
+                                        if (_debounce?.isActive ?? false)
+                                          _debounce!.cancel();
+                                        _debounce = Timer(
+                                          const Duration(milliseconds: 700),
+                                          () {
+                                            _searchAddress(value);
+                                          },
+                                        );
+                                      },
+                                    ),
+
+                                    if (_searchResults.isNotEmpty)
+                                      Container(
+                                        margin: const EdgeInsets.only(top: 6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(
+                                                0.05,
+                                              ),
+                                              blurRadius: 5,
+                                            ),
+                                          ],
+                                        ),
+                                        child: ListView.builder(
+                                          shrinkWrap: true,
+                                          physics:
+                                              const NeverScrollableScrollPhysics(),
+                                          itemCount: _searchResults.length,
+                                          itemBuilder: (context, index) {
+                                            final item = _searchResults[index];
+                                            return ListTile(
+                                              title: Text(item['display_name']),
+                                              onTap: () {
+                                                final lat = double.parse(
+                                                  item['lat'],
+                                                );
+                                                final lon = double.parse(
+                                                  item['lon'],
+                                                );
+                                                final pos = LatLng(lat, lon);
+                                                setState(() {
+                                                  _selectedPosition = pos;
+                                                  _searchResults = [];
+                                                  _searchController.text =
+                                                      item['display_name'];
+                                                });
+                                                _mapController.move(pos, 16);
+                                              },
+                                            );
+                                          },
+                                        ),
+                                      ),
+
+                                    const SizedBox(height: 14),
+                                    const Text(
+                                      "Seleziona posizione sulla mappa",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(16),
+                                      child: _buildMappa(),
+                                    ),
+
+                                    const SizedBox(height: 16),
+
+                                    DropdownButtonFormField<int>(
+                                      value: _selectedEnteId,
+                                      items: _enti
+                                          .map(
+                                            (e) => DropdownMenuItem(
+                                              value: e.id,
+                                              child: Text(
+                                                e.nomeEnte ?? 'Ente ${e.id}',
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                      onChanged: (v) =>
+                                          setState(() => _selectedEnteId = v),
+                                      decoration: InputDecoration(
+                                        labelText: "Ente",
+                                        labelStyle: const TextStyle(
+                                          color: Colors.white70,
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(
+                                          0.03,
+                                        ),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                      ),
+                                      validator: (v) => v == null
+                                          ? "Seleziona un ente"
+                                          : null,
+                                    ),
+
+                                    const SizedBox(height: 26),
+
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color.fromARGB(
+                                            255,
+                                            30,
+                                            78,
+                                            33,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 14,
+                                          ),
+                                        ),
+                                        onPressed: _submit,
+                                        child: const Text(
+                                          "Crea Segnalazione",
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
