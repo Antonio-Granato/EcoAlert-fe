@@ -38,6 +38,8 @@ class _LoginWebPageState extends State<LoginWebPage>
   bool isLoading = false;
   String? loginError;
 
+  bool _showPassword = false;
+
   late AnimationController _controller;
   late Animation<double> _fade;
   final Random _random = Random();
@@ -311,11 +313,47 @@ class _LoginWebPageState extends State<LoginWebPage>
                               icon: Icons.email,
                             ),
                             const SizedBox(height: 16),
-                            _buildTextField(
+                            TextFormField(
                               controller: passwordController,
-                              label: "Password",
-                              icon: Icons.lock,
-                              obscureText: true,
+                              obscureText: !_showPassword,
+                              validator: (v) => (v == null || v.isEmpty)
+                                  ? "Campo obbligatorio"
+                                  : null,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                prefixIcon: Icon(
+                                  Icons.lock,
+                                  color: Colors.white70,
+                                ),
+                                labelText: "Password",
+                                labelStyle: const TextStyle(
+                                  color: Colors.white70,
+                                ),
+                                filled: true,
+                                fillColor: Colors.white.withOpacity(0.08),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFF00BFA5),
+                                    width: 2,
+                                  ),
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _showPassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    color: Colors.white70,
+                                  ),
+                                  onPressed: () => setState(
+                                    () => _showPassword = !_showPassword,
+                                  ),
+                                ),
+                              ),
                             ),
                             if (loginError != null) ...[
                               const SizedBox(height: 12),
