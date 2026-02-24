@@ -184,6 +184,76 @@ class _profiloPageState extends State<profiloPage> {
     );
   }
 
+  Future<void> _confirmDeleteUser() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Conferma eliminazione"),
+        content: const Text(
+          "Sei sicuro di voler eliminare il tuo account?\nQuesta azione è irreversibile.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Annulla"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Elimina", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _deleteUser();
+    }
+  }
+
+  Future<void> _deleteUser() async {
+    try {
+      await widget.utentiApi.deleteUser(id: widget.userId);
+
+      if (!mounted) return;
+
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: Colors.green.shade50,
+          title: const Text(
+            "Account eliminato",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text("Il tuo account è stato eliminato con successo."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+
+      _redirectToWelcome();
+    } on DioException catch (e) {
+      String message = "Errore durante l'eliminazione";
+
+      if (e.response?.data is Map<String, dynamic>) {
+        message =
+            (e.response?.data as Map<String, dynamic>)["message"]?.toString() ??
+            message;
+      }
+
+      await _showErrorDialog(message);
+    } catch (_) {
+      await _showErrorDialog("Errore imprevisto durante l'eliminazione.");
+    }
+  }
+
   Widget _header(BuildContext context) {
     return Row(
       children: [
@@ -217,6 +287,21 @@ class _profiloPageState extends State<profiloPage> {
               ),
             ],
           ),
+        ),
+        // 🌟 Menu tre puntini
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, color: Colors.white),
+          onSelected: (value) {
+            if (value == 'delete') {
+              _confirmDeleteUser();
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'delete',
+              child: Text('Elimina account'),
+            ),
+          ],
         ),
       ],
     );
@@ -289,7 +374,9 @@ class _profiloPageState extends State<profiloPage> {
           const SizedBox(height: 16),
           _infoRow(Icons.person, "Cognome", utente.cognome),
           const SizedBox(height: 16),
-          _infoRow(Icons.location_on, "Paese", utente.paese),
+          _infoRow(Icons.phone, "Numero di telefono", utente.numeroTelefono),
+          const SizedBox(height: 16),
+          _infoRow(Icons.person, "Codice Fiscale", utente.codiceFiscale),
           const SizedBox(height: 16),
           _infoRow(Icons.flag, "Nazione", utente.nazione),
         ],

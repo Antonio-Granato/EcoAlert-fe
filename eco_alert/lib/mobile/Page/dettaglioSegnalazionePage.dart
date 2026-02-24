@@ -52,6 +52,14 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
   // ignore: unused_field
   bool _loadingAperturaAllegato = false;
   Error? error;
+  String _formatDate(DateTime date) {
+    return "${date.day.toString().padLeft(2, '0')}/"
+        "${date.month.toString().padLeft(2, '0')}/"
+        "${date.year} "
+        "${date.hour.toString().padLeft(2, '0')}:"
+        "${date.minute.toString().padLeft(2, '0')}";
+  }
+
   void Function(void Function())? _modalSetState;
 
   @override
@@ -656,25 +664,68 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
           ),
         ),
         const SizedBox(height: 8),
+
         if (s.commenti != null && s.commenti!.isNotEmpty)
           ...s.commenti!.map(
-            (c) => Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    "- ${c.descrizione}",
+            (c) => Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withOpacity(0.08)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // HEADER COMMENTO
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          "${c.nome ?? ""} ${c.cognome ?? ""}"
+                          "${c.nomeEnte != null ? " - ${c.nomeEnte}" : ""}",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      if (c.dataCommento != null)
+                        Text(
+                          _formatDate(c.dataCommento!),
+                          style: const TextStyle(
+                            color: Colors.white38,
+                            fontSize: 11,
+                          ),
+                        ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  // TESTO COMMENTO
+                  Text(
+                    c.descrizione ?? "",
                     style: const TextStyle(color: Colors.white70),
                   ),
-                ),
-                // Mostra l’icona solo se si può eliminare
-                if (c.idUtente == s.idUtente)
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.redAccent),
-                    onPressed: () => _deleteCommento(c.id!),
-                  ),
-              ],
+
+                  // DELETE: SOLO SE COMMENTO DELL'UTENTE LOGGATO
+                  if (c.idUtente == widget.userId)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.redAccent),
+                        onPressed: () => _deleteCommento(c.id!),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
+
         if (s.commenti == null || s.commenti!.isEmpty)
           const Text(
             "Nessun commento",
@@ -692,7 +743,7 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                 style: const TextStyle(color: Colors.white70),
                 decoration: InputDecoration(
                   hintText: "Scrivi un commento...",
-                  hintStyle: TextStyle(color: Colors.white38),
+                  hintStyle: const TextStyle(color: Colors.white38),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -992,6 +1043,30 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                             children: [
                               // BADGE STATO
                               _buildDarkBadge(segnalazione.stato),
+
+                              const SizedBox(height: 12),
+
+                              // DATE
+                              if (segnalazione.dataSegnalazione != null)
+                                Text(
+                                  "Data segnalazione: ${_formatDate(segnalazione.dataSegnalazione!)}",
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 13,
+                                  ),
+                                ),
+
+                              if (segnalazione.dataChiusura != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    "Data chiusura: ${_formatDate(segnalazione.dataChiusura!)}",
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
 
                               const SizedBox(height: 16),
 

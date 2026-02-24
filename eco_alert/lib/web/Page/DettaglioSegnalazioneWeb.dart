@@ -584,7 +584,7 @@ class _DettaglioSegnalazioneWebPageState
     switch (s) {
       case StatoEnum.INSERITO:
         return Colors.greenAccent;
-      case StatoEnum.PRESO_IN_CARICO:
+      case StatoEnum.RICEVUTO:
         return Colors.blueAccent;
       case StatoEnum.SOSPESO:
         return Colors.orangeAccent;
@@ -599,7 +599,7 @@ class _DettaglioSegnalazioneWebPageState
     switch (s) {
       case StatoEnum.INSERITO:
         return Icons.new_releases_rounded;
-      case StatoEnum.PRESO_IN_CARICO:
+      case StatoEnum.RICEVUTO:
         return Icons.work_rounded;
       case StatoEnum.SOSPESO:
         return Icons.pause_circle_filled_rounded;

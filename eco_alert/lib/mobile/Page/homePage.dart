@@ -34,7 +34,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  Future<List<SegnalazioneOutput>> futureReports = Future.value([]);
+  late Future<List<SegnalazioneOutput>> futureReports;
   Error? error;
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -42,22 +42,48 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshReports(initial: true);
-    });
 
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
+
     _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+
     _controller.forward();
+
+    futureReports = _loadReports();
+
+    _refreshReports();
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<List<SegnalazioneOutput>> _loadReports() async {
+    try {
+      final res = await widget.utentiApi.getSegnalazioniByUserId(
+        id: widget.userId,
+      );
+
+      if (res.data == null || res.data!.isEmpty) {
+        error = Error(
+          (b) => b
+            ..code = 404
+            ..message = "Non hai ancora effettuato segnalazioni.",
+        );
+        return [];
+      }
+
+      error = null;
+      return res.data!.toList();
+    } catch (e) {
+      error = Error((b) => b..message = "Errore durante il caricamento");
+      return [];
+    }
   }
 
   Future<void> _refreshReports({bool initial = false}) async {
@@ -118,40 +144,30 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.5),
-              blurRadius: 30,
-              offset: const Offset(0, 15),
-            ),
-          ],
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: Colors.white.withOpacity(0.12),
+        elevation: 0,
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: const Text(
+          "Crea una nuova segnalazione",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
-        child: FloatingActionButton(
-          backgroundColor: Colors.white.withOpacity(0.12),
-          child: const Icon(Icons.add_rounded, color: Colors.white),
-          elevation: 0,
-          splashColor: Colors.white.withOpacity(0.1),
-          onPressed: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => CreaSegnalazionePage(
-                  utentiApi: widget.utentiApi,
-                  userId: widget.userId,
-                  dio: widget.dio,
-                  authApi: widget.authApi,
-                  segnalazioniApi: widget.segnalazioniApi,
-                  entiApi: widget.entiApi,
-                ),
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CreaSegnalazionePage(
+                utentiApi: widget.utentiApi,
+                userId: widget.userId,
+                dio: widget.dio,
+                authApi: widget.authApi,
+                segnalazioniApi: widget.segnalazioniApi,
+                entiApi: widget.entiApi,
               ),
-            );
-            if (result == true) await _refreshReports();
-          },
-        ),
+            ),
+          );
+          if (result == true) await _refreshReports();
+        },
       ),
       body: Stack(
         children: [
@@ -274,15 +290,26 @@ class _HomePageState extends State<HomePage>
 
                           if (error != null && error!.code == 404) {
                             return Center(
-                              child: Text(
-                                error!.message ?? "Nessuna segnalazione creata",
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontFamily: "Poppins",
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 18,
-                                ),
-                                textAlign: TextAlign.center,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Icon(
+                                    Icons.info_outline,
+                                    size: 48,
+                                    color: Colors.white54,
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    "Non hai ancora effettuato segnalazioni",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontFamily: "Poppins",
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 18,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
                               ),
                             );
                           }

@@ -36,6 +36,7 @@ class _LoginPageState extends State<LoginPage>
   final passwordController = TextEditingController();
   final formKey = GlobalKey<FormState>();
   bool isLoading = false;
+  bool _obscurePassword = true;
   String? loginError;
 
   late AnimationController _controller;
@@ -229,13 +230,26 @@ class _LoginPageState extends State<LoginPage>
   }) {
     return TextFormField(
       controller: controller,
-      obscureText: obscure,
+      obscureText: obscure ? _obscurePassword : false,
       validator: (v) => (v == null || v.isEmpty) ? "Campo obbligatorio" : null,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white70),
         prefixIcon: Icon(icon, color: Colors.white70),
+        suffixIcon: obscure
+            ? IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.white70,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
+              )
+            : null,
         filled: true,
         fillColor: Colors.white.withOpacity(0.08),
         border: OutlineInputBorder(

@@ -324,8 +324,6 @@ class _ProfiloWebPageState extends State<ProfiloWebPage>
           const Divider(color: Colors.white24),
           _infoRow(Icons.person_outline, "Nome", utente.nome),
           const Divider(color: Colors.white24),
-          _infoRow(Icons.location_city, "Paese", utente.paese),
-          const Divider(color: Colors.white24),
           _infoRow(Icons.flag, "Nazione", utente.nazione),
         ],
       ),

@@ -37,50 +37,6 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    // Dopo il primo frame, se siamo su web e c'è un hash (/...) o ultima route salvata,
-    // tentiamo di navigare verso quella route. Usiamo retry perché il Navigator
-    // potrebbe non essere ancora inizializzato immediatamente.
-    if (kIsWeb) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _attemptRestoreRoute(retries: 8, delayMs: 60);
-      });
-    }
-  }
-
-  void _attemptRestoreRoute({int retries = 5, int delayMs = 100}) async {
-    // Se già non siamo su web, nothing to do
-    if (!kIsWeb) return;
-
-    final fragment = Uri.base.fragment;
-    String? target;
-    if (fragment.isNotEmpty) {
-      target = fragment.startsWith('/') ? fragment : '/$fragment';
-    } else {
-      final last = WebStorage.getLastRoute();
-      final storedUser = WebStorage.getUserId();
-      if (last != null &&
-          last.isNotEmpty &&
-          (last.contains('userId=') || storedUser != null)) {
-        target = last;
-      }
-    }
-
-    if (target == null) return;
-
-    for (int i = 0; i < retries; i++) {
-      final nav = _navigatorKey.currentState;
-      if (nav != null) {
-        try {
-          nav.pushReplacementNamed(target);
-        } catch (_) {
-          // ignore and continue
-        }
-        return;
-      }
-      await Future.delayed(Duration(milliseconds: delayMs));
-    }
-    // last effort: try without navigatorState (will be ignored if not ready)
-    _navigatorKey.currentState?.pushReplacementNamed(target);
   }
 
   @override

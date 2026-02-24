@@ -604,12 +604,18 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
 
                                     DropdownButtonFormField<int>(
                                       value: _selectedEnteId,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
                                       items: _enti
                                           .map(
                                             (e) => DropdownMenuItem(
                                               value: e.id,
                                               child: Text(
                                                 e.nomeEnte ?? 'Ente ${e.id}',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
                                               ),
                                             ),
                                           )

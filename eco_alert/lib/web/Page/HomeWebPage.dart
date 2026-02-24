@@ -497,7 +497,7 @@ class _SegnalazioneCardWeb extends StatelessWidget {
     final colorBg =
         {
           StatoEnum.INSERITO: Colors.green.shade700,
-          StatoEnum.PRESO_IN_CARICO: Colors.blue.shade700,
+          StatoEnum.RICEVUTO: Colors.blue.shade700,
           StatoEnum.SOSPESO: Colors.yellow.shade700,
           StatoEnum.CHIUSO: Colors.red.shade700,
         }[stato] ??
@@ -507,7 +507,7 @@ class _SegnalazioneCardWeb extends StatelessWidget {
     final icon =
         {
           StatoEnum.INSERITO: Icons.fiber_new_rounded,
-          StatoEnum.PRESO_IN_CARICO: Icons.work_rounded,
+          StatoEnum.RICEVUTO: Icons.work_rounded,
           StatoEnum.SOSPESO: Icons.pause_circle_filled_rounded,
           StatoEnum.CHIUSO: Icons.check_circle_rounded,
         }[stato] ??

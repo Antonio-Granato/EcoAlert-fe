@@ -169,7 +169,6 @@ class _SignInWebPageState extends State<SignInWebPage>
             ..cognome = cognomeController.text
             ..email = emailController.text
             ..password = passwordController.text
-            ..paese = paeseController.text
             ..nazione = nazioneController.text
             ..ruolo = "ente",
         ),
