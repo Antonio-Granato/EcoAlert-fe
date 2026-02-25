@@ -333,10 +333,16 @@ class _LoginPageState extends State<LoginPage>
                           ),
                         ],
                       ),
-                      child: Image.asset(
-                        'assets/images/LOGO.png',
-                        width: logoSize,
-                        height: logoSize,
+                      child: ClipOval(
+                        child: SizedBox(
+                          width: logoSize,
+                          height: logoSize,
+                          child: Image.asset(
+                            'assets/images/ecoalert_logo.png',
+                            fit: BoxFit.cover,
+                            alignment: Alignment(0, -0.35),
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),

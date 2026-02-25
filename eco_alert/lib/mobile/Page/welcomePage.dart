@@ -4,6 +4,7 @@ import 'signInPage.dart';
 import 'package:openapi/openapi.dart';
 import 'package:dio/dio.dart';
 import 'dart:math';
+import 'package:google_fonts/google_fonts.dart';
 
 class WelcomePage extends StatefulWidget {
   final AuthApi authApi;
@@ -95,20 +96,26 @@ class _WelcomePageState extends State<WelcomePage>
     required String label,
     required IconData icon,
     required VoidCallback onTap,
+    required double width,
   }) {
     return SizedBox(
-      width: double.infinity,
+      width: width,
       height: 52,
       child: ElevatedButton.icon(
         icon: Icon(icon, size: 20),
         label: Text(
           label,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          style: GoogleFonts.inter(
+            fontSize: 15.5,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.6,
+          ),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF00BFA5),
           foregroundColor: const Color(0xFF00332F),
           elevation: 8,
+          shadowColor: Colors.black.withOpacity(0.25),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -122,21 +129,24 @@ class _WelcomePageState extends State<WelcomePage>
     required String label,
     required IconData icon,
     required VoidCallback onTap,
+    required double width,
   }) {
     return SizedBox(
-      width: double.infinity,
+      width: width,
       height: 52,
       child: OutlinedButton.icon(
-        icon: Icon(icon, size: 20, color: Colors.white70),
+        icon: Icon(icon, size: 20),
         label: Text(
           label,
-          style: const TextStyle(
-            fontSize: 16,
+          style: GoogleFonts.inter(
+            fontSize: 15.5,
             fontWeight: FontWeight.w500,
+            letterSpacing: 0.6,
             color: Colors.white70,
           ),
         ),
         style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.white,
           side: const BorderSide(color: Colors.white70, width: 1.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -149,12 +159,18 @@ class _WelcomePageState extends State<WelcomePage>
 
   @override
   Widget build(BuildContext context) {
-    final logoSize = 110.0;
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 650;
+
+    final imageSize = isMobile
+        ? size.width * 0.6
+        : min(520.0, size.width * 0.45);
+    final subtitleSize = isMobile ? 16.0 : 18.0;
+    final buttonWidth = isMobile ? size.width * 0.75 : 240.0;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Sfondo verde scuro simile alla versione web
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -169,7 +185,7 @@ class _WelcomePageState extends State<WelcomePage>
             ),
           ),
 
-          // Cerchi animati
+          // Animated ambient circles
           ..._circles.map(
             (c) => Positioned(
               left: c.left,
@@ -193,134 +209,119 @@ class _WelcomePageState extends State<WelcomePage>
           Center(
             child: FadeTransition(
               opacity: _fadeAnimation,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 40,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Cerchio bianco dietro il logo
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.4),
-                            blurRadius: 30,
-                          ),
-                        ],
-                      ),
-                      child: Image.asset(
-                        'assets/images/LOGO.png',
-                        width: logoSize,
-                        height: logoSize,
-                      ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: imageSize,
+                    height: imageSize,
+                    child: Image.asset(
+                      'assets/images/ecoalert_logo.png',
+                      fit: BoxFit.contain,
+                      alignment: Alignment.center,
                     ),
+                  ),
 
-                    const SizedBox(height: 30),
+                  const SizedBox(height: 8),
 
-                    Text(
-                      "EcoAlert",
-                      style: const TextStyle(
-                        fontSize: 40,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        letterSpacing: 1.2,
-                      ),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: 520),
+                    child: Text(
+                      "Segnala e monitora le criticità ambientali nel tuo territorio.",
                       textAlign: TextAlign.center,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    Text(
-                      "Segnala e monitora le criticità ambientali nel tuo territorio",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 16,
+                      style: GoogleFonts.inter(
+                        fontSize: subtitleSize,
                         fontWeight: FontWeight.w300,
-                        color: Colors.white70,
-                        height: 1.8,
+                        height: 1.9,
+                        letterSpacing: 0.6,
+                        color: Colors.white,
                       ),
                     ),
+                  ),
 
-                    const SizedBox(height: 40),
+                  const SizedBox(height: 36),
 
-                    _primaryButton(
-                      label: "Accedi",
-                      icon: Icons.login_rounded,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => LoginPage(
-                              authApi: widget.authApi,
-                              utentiApi: widget.utentiApi,
-                              dio: widget.dio,
-                              segnalazioniApi: widget.segnalazioniApi,
-                              entiApi: widget.entiApi,
-                              commentiApi: widget.commentiApi,
-                              allegatiApi: widget.allegatiApi,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 22,
+                    runSpacing: 12,
+                    children: [
+                      _primaryButton(
+                        label: "Accedi",
+                        icon: Icons.login_rounded,
+                        width: buttonWidth,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => LoginPage(
+                                authApi: widget.authApi,
+                                utentiApi: widget.utentiApi,
+                                dio: widget.dio,
+                                segnalazioniApi: widget.segnalazioniApi,
+                                entiApi: widget.entiApi,
+                                commentiApi: widget.commentiApi,
+                                allegatiApi: widget.allegatiApi,
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
+                          );
+                        },
+                      ),
 
-                    const SizedBox(height: 16),
+                      _secondaryButton(
+                        label: "Crea un account",
+                        icon: Icons.person_add_alt_1_rounded,
+                        width: buttonWidth,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  SignInPage(authApi: widget.authApi),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
 
-                    _secondaryButton(
-                      label: "Crea un account",
-                      icon: Icons.person_add_alt_1_rounded,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => SignInPage(authApi: widget.authApi),
-                          ),
-                        );
-                      },
-                    ),
+                  const SizedBox(height: 44),
 
-                    const SizedBox(height: 30),
-
-                    // Footer
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 12,
-                      children: [
-                        Text(
-                          "© 2025 EcoAlert",
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 18,
+                    children: [
+                      Text(
+                        "© 2025 EcoAlert",
+                        style: GoogleFonts.inter(
+                          fontSize: 12.5,
+                          color: Colors.white70,
                         ),
-                        Text(
-                          "Privacy",
-                          style: TextStyle(
-                            color: Colors.grey.shade400,
-                            decoration: TextDecoration.underline,
-                            fontSize: 12,
-                          ),
-                        ),
-                        Text(
-                          "Termini",
-                          style: TextStyle(
-                            color: Colors.grey.shade400,
-                            decoration: TextDecoration.underline,
-                            fontSize: 12,
-                          ),
-                        ),
-                        Icon(Icons.facebook, color: Colors.white70, size: 16),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                      _footerLink("Privacy"),
+                      _footerLink("Termini"),
+                      Icon(Icons.facebook, color: Colors.white70, size: 18),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _footerLink(String text) {
+    return InkWell(
+      onTap: () {},
+      child: Text(
+        text,
+        style: GoogleFonts.inter(
+          fontSize: 13,
+          color: Colors.grey.shade600,
+          decoration: TextDecoration.underline,
+        ),
       ),
     );
   }

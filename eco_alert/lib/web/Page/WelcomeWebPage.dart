@@ -160,8 +160,9 @@ class _WelcomeWebPageState extends State<WelcomeWebPage>
     final size = MediaQuery.of(context).size;
     final isMobile = size.width < 650;
 
-    final logoSize = isMobile ? 110.0 : 150.0;
-    final titleSize = isMobile ? 40.0 : 64.0;
+    final imageSize = isMobile
+        ? size.width * 0.6
+        : min(520.0, size.width * 0.45);
     final subtitleSize = isMobile ? 16.0 : 18.0;
     final buttonWidth = isMobile ? size.width * 0.75 : 240.0;
 
@@ -211,41 +212,18 @@ class _WelcomeWebPageState extends State<WelcomeWebPage>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ✅ CERCHIO BIANCO DIETRO LOGO
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.4),
-                          blurRadius: 30,
-                        ),
-                      ],
-                    ),
+                  // Immagine centrale ingrandita (sostituisce il cerchio bianco e il titolo)
+                  SizedBox(
+                    width: imageSize,
+                    height: imageSize,
                     child: Image.asset(
-                      'assets/images/LOGO.png',
-                      width: logoSize,
-                      height: logoSize,
+                      'assets/images/ecoalert_logo.png',
+                      fit: BoxFit.contain,
+                      alignment: Alignment.center,
                     ),
                   ),
 
-                  const SizedBox(height: 36),
-
-                  // ✅ TITOLO BIANCO
-                  Text(
-                    'EcoAlert',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.manrope(
-                      fontSize: titleSize,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.4,
-                      color: Colors.white,
-                    ),
-                  ),
-
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 0),
 
                   // ✅ SOTTOTITOLO BIANCO
                   ConstrainedBox(
@@ -258,7 +236,7 @@ class _WelcomeWebPageState extends State<WelcomeWebPage>
                         fontWeight: FontWeight.w300,
                         height: 1.9,
                         letterSpacing: 0.6,
-                        color: Colors.white.withOpacity(0.75),
+                        color: Colors.white,
                       ),
                     ),
                   ),

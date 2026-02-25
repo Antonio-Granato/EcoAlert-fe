@@ -373,10 +373,16 @@ class _SignInWebPageState extends State<SignInWebPage>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Image.asset(
-                          'assets/images/LOGO.png',
-                          width: logoSize,
-                          height: logoSize,
+                        ClipOval(
+                          child: SizedBox(
+                            width: logoSize,
+                            height: logoSize,
+                            child: Image.asset(
+                              'assets/images/ecoalert_logo.png',
+                              fit: BoxFit.cover,
+                              alignment: Alignment(0, -0.35),
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 24),
                         Text(
