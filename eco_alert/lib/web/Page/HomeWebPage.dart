@@ -204,50 +204,86 @@ class _HomeWebPageState extends State<HomeWebPage> {
                         children: [
                           ElevatedButton.icon(
                             onPressed: _logout,
-                            icon: const Icon(Icons.logout),
-                            label: const Text("Logout"),
+                            icon: const Icon(
+                              Icons.logout_outlined,
+                              color: Colors.white,
+                            ),
+                            label: Text(
+                              "Logout",
+                              style: GoogleFonts.manrope(
+                                fontSize: isMobile ? 14 : 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.transparent,
                               foregroundColor: Colors.white,
-                              elevation: 3,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
+                                side: BorderSide(
+                                  color: Colors.white.withOpacity(0.3),
+                                ),
                               ),
                             ),
                           ),
                           const SizedBox(width: 16),
-                          InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ProfiloWebPage(
-                                    utentiApi: widget.utentiApi,
-                                    userId: widget.userId,
-                                    dio: widget.dio,
-                                    authApi: widget.authApi,
-                                    segnalazioniApi: widget.segnalazioniApi,
-                                    entiApi: widget.entiApi,
-                                    commentiApi: widget.commentiApi,
-                                    allegatiApi: widget.allegatiApi,
+
+                          FutureBuilder<UtenteDettaglioOutput?>(
+                            future: futureUser,
+                            builder: (context, snap) {
+                              final nomeEnte =
+                                  (snap.data?.nomeEnte != null &&
+                                      snap.data!.nomeEnte!.isNotEmpty)
+                                  ? snap.data!.nomeEnte!
+                                  : null;
+
+                              return Row(
+                                children: [
+                                  InkWell(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => ProfiloWebPage(
+                                            utentiApi: widget.utentiApi,
+                                            userId: widget.userId,
+                                            dio: widget.dio,
+                                            authApi: widget.authApi,
+                                            segnalazioniApi:
+                                                widget.segnalazioniApi,
+                                            entiApi: widget.entiApi,
+                                            commentiApi: widget.commentiApi,
+                                            allegatiApi: widget.allegatiApi,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    borderRadius: BorderRadius.circular(50),
+                                    child: const CircleAvatar(
+                                      radius: 24,
+                                      backgroundColor: Colors.transparent,
+                                      child: Icon(
+                                        Icons.account_circle_outlined,
+                                        color: Colors.white,
+                                        size: 30,
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  if (nomeEnte != null) ...[
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      nomeEnte,
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               );
                             },
-                            borderRadius: BorderRadius.circular(50),
-                            child: CircleAvatar(
-                              radius: 24,
-                              backgroundColor: Colors.transparent,
-                              child: const Icon(
-                                Icons.account_circle_outlined,
-                                color: Colors.white,
-                                size: 30,
-                              ),
-                            ),
                           ),
                         ],
                       ),
@@ -302,28 +338,22 @@ class _HomeWebPageState extends State<HomeWebPage> {
                                 child: FutureBuilder<UtenteDettaglioOutput?>(
                                   future: futureUser,
                                   builder: (context, snap) {
-                                    final nomeEnte =
-                                        (snap.data?.nomeEnte != null &&
-                                            snap.data!.nomeEnte!.isNotEmpty)
-                                        ? snap.data!.nomeEnte!
-                                        : null;
-
                                     return Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        if (nomeEnte != null) ...[
-                                          Text(
-                                            nomeEnte,
-                                            style: TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
+                                        // LOGO APP
+                                        Row(
+                                          children: [
+                                            Image.asset(
+                                              'assets/images/ecoalert_logo.png',
+                                              height: 100,
                                             ),
-                                          ),
-                                          const SizedBox(height: 12),
-                                        ],
-                                        Expanded(
+                                          ],
+                                        ),
+
+                                        SizedBox(
+                                          height: 700, // ridotta da 700
                                           child: _mapCard(
                                             FlutterMapWidget(
                                               segnalazioni: reports,
@@ -413,28 +443,12 @@ class _HomeWebPageState extends State<HomeWebPage> {
                               child: FutureBuilder<UtenteDettaglioOutput?>(
                                 future: futureUser,
                                 builder: (context, snap) {
-                                  final nomeEnte =
-                                      (snap.data?.nomeEnte != null &&
-                                          snap.data!.nomeEnte!.isNotEmpty)
-                                      ? snap.data!.nomeEnte!
-                                      : null;
-
                                   return Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      if (nomeEnte != null) ...[
-                                        Text(
-                                          nomeEnte,
-                                          style: TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 12),
-                                      ],
-                                      Expanded(
+                                      SizedBox(
+                                        height: 700,
                                         child: _mapCard(
                                           FlutterMapWidget(
                                             segnalazioni: reports,
