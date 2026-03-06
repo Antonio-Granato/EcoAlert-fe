@@ -16,6 +16,7 @@ class LoginPage extends StatefulWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
   });
   final AuthApi authApi;
   final UtentiApi utentiApi;
@@ -23,6 +24,7 @@ class LoginPage extends StatefulWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -34,6 +36,7 @@ class _LoginPageState extends State<LoginPage>
   final passwordController = TextEditingController();
   final formKey = GlobalKey<FormState>();
   bool isLoading = false;
+  bool _obscurePassword = true;
   String? loginError;
 
   late AnimationController _controller;
@@ -162,6 +165,7 @@ class _LoginPageState extends State<LoginPage>
             segnalazioniApi: widget.segnalazioniApi,
             entiApi: widget.entiApi,
             commentiApi: widget.commentiApi,
+            allegatiApi: widget.allegatiApi,
           ),
         ),
       );
@@ -226,13 +230,26 @@ class _LoginPageState extends State<LoginPage>
   }) {
     return TextFormField(
       controller: controller,
-      obscureText: obscure,
+      obscureText: obscure ? _obscurePassword : false,
       validator: (v) => (v == null || v.isEmpty) ? "Campo obbligatorio" : null,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white70),
         prefixIcon: Icon(icon, color: Colors.white70),
+        suffixIcon: obscure
+            ? IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.white70,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
+              )
+            : null,
         filled: true,
         fillColor: Colors.white.withOpacity(0.08),
         border: OutlineInputBorder(
@@ -316,10 +333,16 @@ class _LoginPageState extends State<LoginPage>
                           ),
                         ],
                       ),
-                      child: Image.asset(
-                        'assets/images/LOGO.png',
-                        width: logoSize,
-                        height: logoSize,
+                      child: ClipOval(
+                        child: SizedBox(
+                          width: logoSize,
+                          height: logoSize,
+                          child: Image.asset(
+                            'assets/images/ecoalert_logo.png',
+                            fit: BoxFit.cover,
+                            alignment: Alignment(0, -0.35),
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),

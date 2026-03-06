@@ -13,6 +13,7 @@ class SignInWebPage extends StatefulWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
 
   const SignInWebPage({
     super.key,
@@ -22,6 +23,7 @@ class SignInWebPage extends StatefulWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
   });
 
   @override
@@ -45,6 +47,7 @@ class _SignInWebPageState extends State<SignInWebPage>
   late Animation<double> _fade;
   final Random _random = Random();
   final List<_CircleData> _circles = [];
+  bool _showPassword = false;
 
   @override
   void initState() {
@@ -167,7 +170,6 @@ class _SignInWebPageState extends State<SignInWebPage>
             ..cognome = cognomeController.text
             ..email = emailController.text
             ..password = passwordController.text
-            ..paese = paeseController.text
             ..nazione = nazioneController.text
             ..ruolo = "ente",
         ),
@@ -371,10 +373,16 @@ class _SignInWebPageState extends State<SignInWebPage>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Image.asset(
-                          'assets/images/LOGO.png',
-                          width: logoSize,
-                          height: logoSize,
+                        ClipOval(
+                          child: SizedBox(
+                            width: logoSize,
+                            height: logoSize,
+                            child: Image.asset(
+                              'assets/images/ecoalert_logo.png',
+                              fit: BoxFit.cover,
+                              alignment: Alignment(0, -0.35),
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 24),
                         Text(
@@ -393,7 +401,7 @@ class _SignInWebPageState extends State<SignInWebPage>
                             children: [
                               _buildTextField(
                                 controller: nameController,
-                                label: "Nome",
+                                label: "Nome Ente",
                                 icon: Icons.person,
                               ),
                               const SizedBox(height: 16),
@@ -403,11 +411,51 @@ class _SignInWebPageState extends State<SignInWebPage>
                                 icon: Icons.email,
                               ),
                               const SizedBox(height: 16),
-                              _buildTextField(
+                              TextFormField(
                                 controller: passwordController,
-                                label: "Password",
-                                icon: Icons.lock,
-                                obscureText: true,
+                                obscureText: !_showPassword,
+                                validator: (v) => (v == null || v.isEmpty)
+                                    ? "Campo obbligatorio"
+                                    : null,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: InputDecoration(
+                                  prefixIcon: Icon(
+                                    Icons.lock,
+                                    color: Colors.white70,
+                                  ),
+                                  labelText: "Password",
+                                  labelStyle: const TextStyle(
+                                    color: Colors.white70,
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.white.withOpacity(0.08),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 18,
+                                    horizontal: 16,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF00BFA5),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _showPassword
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
+                                      color: Colors.white70,
+                                    ),
+                                    onPressed: () => setState(
+                                      () => _showPassword = !_showPassword,
+                                    ),
+                                  ),
+                                ),
                               ),
                               const SizedBox(height: 16),
                               _buildTextField(
@@ -446,6 +494,7 @@ class _SignInWebPageState extends State<SignInWebPage>
                                       segnalazioniApi: widget.segnalazioniApi,
                                       entiApi: widget.entiApi,
                                       commentiApi: widget.commentiApi,
+                                      allegatiApi: widget.allegatiApi,
                                     ),
                                   ),
                                 ),

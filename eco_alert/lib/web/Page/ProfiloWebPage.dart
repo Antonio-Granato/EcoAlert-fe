@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui';
 import 'package:eco_alert/web/Page/HomeWebPage.dart';
 import 'package:eco_alert/web/Page/WelcomeWebPage.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ class ProfiloWebPage extends StatefulWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
 
   const ProfiloWebPage({
     super.key,
@@ -24,6 +26,7 @@ class ProfiloWebPage extends StatefulWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
   });
 
   @override
@@ -113,6 +116,7 @@ class _ProfiloWebPageState extends State<ProfiloWebPage>
             segnalazioniApi: widget.segnalazioniApi,
             entiApi: widget.entiApi,
             commentiApi: widget.commentiApi,
+            allegatiApi: widget.allegatiApi,
           ),
         ),
         (route) => false,
@@ -155,6 +159,151 @@ class _ProfiloWebPageState extends State<ProfiloWebPage>
     );
   }
 
+  Widget _topBar(UtenteDettaglioOutput utente) {
+    return Row(
+      children: [
+        IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Profilo',
+                style: GoogleFonts.manrope(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Le tue informazioni personali',
+                style: const TextStyle(color: Colors.white70),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, color: Colors.white),
+          color: const Color(0xFF0F4F45),
+          onSelected: (value) {
+            if (value == 'delete') _confirmDeleteUser();
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'delete',
+              child: Text(
+                'Elimina account',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _glassContainer({required Widget child, double? height}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.03),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: Colors.white.withOpacity(0.06)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.12),
+                blurRadius: 30,
+                offset: const Offset(0, 16),
+              ),
+            ],
+          ),
+          child: height != null
+              ? SizedBox(height: height, child: child)
+              : child,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteUser() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Conferma eliminazione'),
+        content: const Text(
+          'Sei sicuro di voler eliminare il tuo account? Questa azione è irreversibile.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annulla'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Elimina', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) await _deleteUser();
+  }
+
+  Future<void> _deleteUser() async {
+    try {
+      await widget.utentiApi.deleteUser(id: widget.userId);
+
+      if (!mounted) return;
+
+      await showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: Colors.green.shade50,
+          title: const Text(
+            'Account eliminato',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text('Il tuo account è stato eliminato con successo.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+
+      _redirectToWelcome();
+    } on DioException catch (e) {
+      String message = 'Errore durante l\'eliminazione';
+      if (e.response?.data is Map<String, dynamic>) {
+        message =
+            (e.response?.data as Map<String, dynamic>)['message']?.toString() ??
+            message;
+      }
+      await _showErrorDialog(message);
+    } catch (_) {
+      await _showErrorDialog('Errore imprevisto durante l\'eliminazione.');
+    }
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -163,10 +312,6 @@ class _ProfiloWebPageState extends State<ProfiloWebPage>
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isMobile = size.width < 900;
-    final contentWidth = isMobile ? size.width * 0.9 : 600.0;
-
     return Scaffold(
       body: Stack(
         children: [
@@ -210,92 +355,163 @@ class _ProfiloWebPageState extends State<ProfiloWebPage>
                   }
                   final utente = snapshot.data;
                   if (utente == null) return const SizedBox();
-                  return Container(
-                    width: contentWidth,
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircleAvatar(
-                          radius: 60,
-                          backgroundColor: const Color(0xFF00BFA5),
-                          child: (utente.nome?.isNotEmpty ?? false)
-                              ? Text(
-                                  utente.nome![0].toUpperCase(),
-                                  style: const TextStyle(
-                                    fontSize: 44,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.apartment,
-                                  size: 44,
-                                  color: const Color(0xFF00332F),
-                                ),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          "${utente.nome ?? ""} ${utente.cognome ?? ""}".trim(),
-                          style: GoogleFonts.manrope(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        _infoCard(utente),
 
-                        const SizedBox(height: 48),
-                        Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: 22,
-                          runSpacing: 16,
-                          children: [
-                            _actionButton(
-                              label: "Home",
-                              icon: Icons.home_rounded,
-                              background: Colors.transparent,
-                              foreground: Colors.white,
-                              borderColor: Colors.white30,
-                              onTap: () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => HomeWebPage(
-                                      authApi: widget.authApi,
-                                      utentiApi: widget.utentiApi,
-                                      dio: widget.dio,
-                                      segnalazioniApi: widget.segnalazioniApi,
-                                      entiApi: widget.entiApi,
-                                      commentiApi: widget.commentiApi,
-                                      userId: widget.userId,
+                  return ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1400),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 22,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _topBar(utente),
+                          const SizedBox(height: 28),
+                          Expanded(
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                if (constraints.maxWidth < 1000) {
+                                  return SingleChildScrollView(
+                                    child: Column(
+                                      children: [
+                                        _glassContainer(
+                                          child: Column(
+                                            children: [
+                                              _profileHeader(utente),
+                                              const SizedBox(height: 18),
+                                              _infoCard(utente),
+                                              const SizedBox(height: 18),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  OutlinedButton.icon(
+                                                    onPressed: () {
+                                                      Navigator.pushReplacement(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (_) => HomeWebPage(
+                                                            authApi:
+                                                                widget.authApi,
+                                                            utentiApi: widget
+                                                                .utentiApi,
+                                                            dio: widget.dio,
+                                                            segnalazioniApi: widget
+                                                                .segnalazioniApi,
+                                                            entiApi:
+                                                                widget.entiApi,
+                                                            commentiApi: widget
+                                                                .commentiApi,
+                                                            userId:
+                                                                widget.userId,
+                                                            allegatiApi: widget
+                                                                .allegatiApi,
+                                                          ),
+                                                        ),
+                                                      );
+                                                    },
+                                                    style: OutlinedButton.styleFrom(
+                                                      side: BorderSide(
+                                                        color: Colors.white
+                                                            .withOpacity(0.12),
+                                                      ),
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              20,
+                                                            ),
+                                                      ),
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 22,
+                                                            vertical: 12,
+                                                          ),
+                                                    ),
+                                                    icon: const Icon(
+                                                      Icons.home_rounded,
+                                                      color: Colors.white,
+                                                      size: 18,
+                                                    ),
+                                                    label: Text(
+                                                      'Home',
+                                                      style: GoogleFonts.inter(
+                                                        color: Colors.white,
+                                                        fontSize: 14,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  ElevatedButton.icon(
+                                                    onPressed:
+                                                        _confirmDeleteUser,
+                                                    icon: const Icon(
+                                                      Icons.delete_outline,
+                                                      size: 18,
+                                                    ),
+                                                    label: Text(
+                                                      'Elimina account',
+                                                      style: GoogleFonts.inter(
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor:
+                                                          Colors.red.shade600,
+                                                      foregroundColor:
+                                                          Colors.white,
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 22,
+                                                            vertical: 12,
+                                                          ),
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              20,
+                                                            ),
+                                                      ),
+                                                      elevation: 6,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
+                                  );
+                                }
+
+                                return Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      flex: 8,
+                                      child: _glassContainer(
+                                        height: 460,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            _profileHeader(utente),
+                                            const SizedBox(height: 18),
+                                            _infoCard(utente),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    // Right-side actions card removed per user request
+                                  ],
                                 );
                               },
                             ),
-                            _actionButton(
-                              label: "Logout",
-                              icon: Icons.logout_rounded,
-                              background: const Color(0xFF00BFA5),
-                              foreground: const Color(0xFF00332F),
-                              onTap: _redirectToWelcome,
-                            ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -308,21 +524,64 @@ class _ProfiloWebPageState extends State<ProfiloWebPage>
   }
 
   Widget _infoCard(UtenteDettaglioOutput utente) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(16),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _infoRow(Icons.email, "Email", utente.email),
           const Divider(color: Colors.white24),
-          _infoRow(Icons.person_outline, "Nome", utente.nome),
-          const Divider(color: Colors.white24),
-          _infoRow(Icons.location_city, "Paese", utente.paese),
+          _infoRow(Icons.business_outlined, "Nome Ente", utente.nomeEnte),
           const Divider(color: Colors.white24),
           _infoRow(Icons.flag, "Nazione", utente.nazione),
+        ],
+      ),
+    );
+  }
+
+  Widget _profileHeader(UtenteDettaglioOutput utente) {
+    return Center(
+      child: Column(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.4),
+                  blurRadius: 30,
+                  offset: const Offset(0, 15),
+                ),
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 55,
+              backgroundColor: Colors.white.withOpacity(0.1),
+              child: Text(
+                (utente.nome?.isNotEmpty ?? false)
+                    ? utente.nome![0].toUpperCase()
+                    : (utente.nomeEnte?.isNotEmpty ?? false)
+                    ? utente.nomeEnte![0].toUpperCase()
+                    : "?",
+                style: const TextStyle(
+                  fontSize: 42,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            (utente.nomeEnte?.isNotEmpty == true)
+                ? utente.nomeEnte!
+                : "${utente.nome ?? ""} ${utente.cognome ?? ""}".trim(),
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
         ],
       ),
     );
@@ -333,15 +592,23 @@ class _ProfiloWebPageState extends State<ProfiloWebPage>
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(icon, color: Colors.green.shade300, size: 26),
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: Colors.green.shade900.withOpacity(0.35),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Colors.green.shade200, size: 18),
+          ),
           const SizedBox(width: 12),
           SizedBox(
-            width: 100,
+            width: 110,
             child: Text(
-              "$label:",
+              "$label",
               style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
                 color: Colors.white,
               ),
             ),
@@ -349,43 +616,10 @@ class _ProfiloWebPageState extends State<ProfiloWebPage>
           Expanded(
             child: Text(
               value ?? "-",
-              style: const TextStyle(fontSize: 16, color: Colors.white70),
+              style: const TextStyle(fontSize: 14, color: Colors.white70),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _actionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    Color background = Colors.transparent,
-    Color foreground = Colors.white,
-    Color? borderColor,
-  }) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: ElevatedButton.icon(
-        onPressed: onTap,
-        icon: Icon(icon, size: 22),
-        label: Text(
-          label,
-          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: background,
-          foregroundColor: foreground,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: borderColor != null
-                ? BorderSide(color: borderColor)
-                : BorderSide.none,
-          ),
-          elevation: background == Colors.transparent ? 0 : 6,
-        ),
       ),
     );
   }

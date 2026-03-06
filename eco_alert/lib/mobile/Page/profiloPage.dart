@@ -11,6 +11,7 @@ class profiloPage extends StatefulWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
 
   const profiloPage({
     super.key,
@@ -21,6 +22,7 @@ class profiloPage extends StatefulWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
   });
 
   @override
@@ -75,6 +77,7 @@ class _profiloPageState extends State<profiloPage> {
             segnalazioniApi: widget.segnalazioniApi,
             entiApi: widget.entiApi,
             commentiApi: widget.commentiApi,
+            allegatiApi: widget.allegatiApi,
           ),
         ),
         (route) => false,
@@ -119,31 +122,20 @@ class _profiloPageState extends State<profiloPage> {
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColors = [
-      const Color(0xFFe0f2f1),
-      const Color(0xFFb2dfdb),
-      const Color(0xFF80cbc4),
-    ];
-
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 30, 78, 33),
-        title: const Text(
-          "Profilo Utente",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        centerTitle: true,
-      ),
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: backgroundColors,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+          // 🔹 STESSO GRADIENT DELLA HOME
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF0F2F2B),
+                  Color(0xFF0B3D35),
+                  Color(0xFF083A33),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
           ),
@@ -153,7 +145,10 @@ class _profiloPageState extends State<profiloPage> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
-                    child: CircularProgressIndicator(color: Colors.green),
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 3,
+                    ),
                   );
                 }
 
@@ -164,23 +159,19 @@ class _profiloPageState extends State<profiloPage> {
                 return LayoutBuilder(
                   builder: (context, constraints) {
                     return SingleChildScrollView(
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minHeight: constraints.maxHeight,
-                        ),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          color: Colors.transparent,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              _profileHeader(utente),
-                              const SizedBox(height: 20),
-                              _infoCard(utente),
-                            ],
-                          ),
-                        ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 30,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _header(context),
+                          const SizedBox(height: 30),
+                          _profileHeader(utente),
+                          const SizedBox(height: 20),
+                          _infoCard(utente),
+                        ],
                       ),
                     );
                   },
@@ -193,84 +184,230 @@ class _profiloPageState extends State<profiloPage> {
     );
   }
 
-  Widget _profileHeader(UtenteDettaglioOutput utente) {
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 55,
-          backgroundColor: Colors.green.shade300,
-          child: Text(
-            (utente.nome?.isNotEmpty ?? false)
-                ? utente.nome![0].toUpperCase()
-                : "?",
-            style: const TextStyle(
-              fontSize: 42,
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
+  Future<void> _confirmDeleteUser() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Conferma eliminazione"),
+        content: const Text(
+          "Sei sicuro di voler eliminare il tuo account?\nQuesta azione è irreversibile.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Annulla"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Elimina", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _deleteUser();
+    }
+  }
+
+  Future<void> _deleteUser() async {
+    try {
+      await widget.utentiApi.deleteUser(id: widget.userId);
+
+      if (!mounted) return;
+
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: Colors.green.shade50,
+          title: const Text(
+            "Account eliminato",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text("Il tuo account è stato eliminato con successo."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
             ),
+          ],
+        ),
+      );
+
+      _redirectToWelcome();
+    } on DioException catch (e) {
+      String message = "Errore durante l'eliminazione";
+
+      if (e.response?.data is Map<String, dynamic>) {
+        message =
+            (e.response?.data as Map<String, dynamic>)["message"]?.toString() ??
+            message;
+      }
+
+      await _showErrorDialog(message);
+    } catch (_) {
+      await _showErrorDialog("Errore imprevisto durante l'eliminazione.");
+    }
+  }
+
+  Widget _header(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white70),
+            onPressed: () => Navigator.pop(context),
           ),
         ),
-        const SizedBox(height: 15),
-        Text(
-          "${utente.nome ?? ""} ${utente.cognome ?? ""}".trim(),
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+        const SizedBox(width: 16),
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Profilo",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                "Le tue informazioni personali",
+                style: TextStyle(fontSize: 14, color: Colors.white70),
+              ),
+            ],
           ),
+        ),
+        // 🌟 Menu tre puntini
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, color: Colors.white),
+          onSelected: (value) {
+            if (value == 'delete') {
+              _confirmDeleteUser();
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'delete',
+              child: Text('Elimina account'),
+            ),
+          ],
         ),
       ],
     );
   }
 
+  Widget _profileHeader(UtenteDettaglioOutput utente) {
+    return Center(
+      child: Column(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.4),
+                  blurRadius: 30,
+                  offset: const Offset(0, 15),
+                ),
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 55,
+              backgroundColor: Colors.white.withOpacity(0.1),
+              child: Text(
+                (utente.nome?.isNotEmpty ?? false)
+                    ? utente.nome![0].toUpperCase()
+                    : "?",
+                style: const TextStyle(
+                  fontSize: 42,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "${utente.nome ?? ""} ${utente.cognome ?? ""}".trim(),
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _infoCard(UtenteDettaglioOutput utente) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          children: [
-            _infoRow(Icons.email, "Email", utente.email),
-            const Divider(),
-            _infoRow(Icons.person_outline, "Nome", utente.nome),
-            const Divider(),
-            _infoRow(Icons.person, "Cognome", utente.cognome),
-            const Divider(),
-            _infoRow(Icons.location_on, "Paese", utente.paese),
-            const Divider(),
-            _infoRow(Icons.flag, "Nazione", utente.nazione),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.35),
+            blurRadius: 25,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _infoRow(Icons.email, "Email", utente.email),
+          const SizedBox(height: 16),
+          _infoRow(Icons.person_outline, "Nome", utente.nome),
+          const SizedBox(height: 16),
+          _infoRow(Icons.person, "Cognome", utente.cognome),
+          const SizedBox(height: 16),
+          _infoRow(Icons.phone, "Numero di telefono", utente.numeroTelefono),
+          const SizedBox(height: 16),
+          _infoRow(Icons.person, "Codice Fiscale", utente.codiceFiscale),
+          const SizedBox(height: 16),
+          _infoRow(Icons.flag, "Nazione", utente.nazione),
+        ],
       ),
     );
   }
 
   Widget _infoRow(IconData icon, String label, String? value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: Colors.green, size: 26),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 90,
-            child: Text(
-              "$label:",
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: Colors.white70, size: 22),
+        const SizedBox(width: 12),
+        SizedBox(
+          width: 90,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.white70,
             ),
           ),
-          Expanded(
-            child: Text(
-              value ?? "-",
-              softWrap: true,
-              overflow: TextOverflow.visible,
-              style: const TextStyle(fontSize: 16, color: Colors.black87),
-            ),
+        ),
+        Expanded(
+          child: Text(
+            value ?? "-",
+            style: const TextStyle(fontSize: 15, color: Colors.white),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

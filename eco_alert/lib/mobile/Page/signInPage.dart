@@ -17,16 +17,17 @@ class _SignInPageState extends State<SignInPage>
   final passwordController = TextEditingController();
   final nameController = TextEditingController();
   final cognomeController = TextEditingController();
-  final paeseController = TextEditingController();
+  final codiceFiscaleController = TextEditingController();
+  final numeroTelefonoController = TextEditingController();
   final nazioneController = TextEditingController();
 
   final formKey = GlobalKey<FormState>();
   bool isLoading = false;
+  bool _obscurePassword = true;
   String? signInError;
 
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
-  late Animation<double> _logoScale;
 
   @override
   void initState() {
@@ -39,51 +40,91 @@ class _SignInPageState extends State<SignInPage>
 
     _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
 
-    _logoScale = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
-
     _controller.forward();
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    nameController.dispose();
+    cognomeController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    nazioneController.dispose();
+    codiceFiscaleController.dispose();
+    numeroTelefonoController.dispose();
     super.dispose();
   }
 
   Widget _buildButton({
-    required String text,
-    required VoidCallback onPressed,
+    required String label,
+    required VoidCallback onTap,
     required bool isPrimary,
   }) {
-    final backgroundColor = isPrimary ? Colors.green.shade700 : Colors.white;
-    final borderColor = isPrimary
-        ? Colors.green.shade800
-        : Colors.green.shade700;
-    final textColor = isPrimary ? Colors.white : Colors.green.shade800;
+    final bgColor = isPrimary
+        ? const Color(0xFF00BFA5)
+        : Colors.white.withOpacity(0.1);
+    final fgColor = isPrimary ? Colors.white : Colors.white70;
 
     return SizedBox(
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
+        onPressed: isLoading ? null : onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: BorderSide(color: borderColor, width: 1.5),
-          ),
+          backgroundColor: bgColor,
+          foregroundColor: fgColor,
           elevation: 6,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.white.withOpacity(0.3)),
+          ),
         ),
         child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: textColor,
-          ),
+          label,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool obscure = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscure ? _obscurePassword : false,
+      validator: (v) => (v == null || v.isEmpty) ? "Campo obbligatorio" : null,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white70),
+        prefixIcon: Icon(icon, color: Colors.white70),
+        suffixIcon: obscure
+            ? IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.white70,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
+              )
+            : null,
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.08),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF00BFA5), width: 2),
         ),
       ),
     );
@@ -91,157 +132,161 @@ class _SignInPageState extends State<SignInPage>
 
   @override
   Widget build(BuildContext context) {
-    final gradientColors = [
-      Color(0xFFe0f2f1),
-      Color(0xFFb2dfdb),
-      Color(0xFF80cbc4),
-    ];
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 650;
+    final logoSize = isMobile ? 100.0 : 140.0;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: gradientColors,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ScaleTransition(
-                    scale: _logoScale,
-                    child: Image.asset(
-                      'assets/images/LOGO.png',
-                      width: 120,
-                      height: 120,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    "Registrati a EcoAlert!",
-                    style: TextStyle(
-                      fontFamily: "Poppins",
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      foreground: Paint()
-                        ..shader =
-                            LinearGradient(
-                              colors: [
-                                Colors.green.shade800,
-                                Colors.green.shade600,
-                              ],
-                            ).createShader(
-                              const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0),
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Form(
-                    key: formKey,
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: nameController,
-                          decoration: const InputDecoration(
-                            labelText: "Nome",
-                            prefixIcon: Icon(Icons.person),
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) => (value == null || value.isEmpty)
-                              ? 'Inserisci il nome'
-                              : null,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: cognomeController,
-                          decoration: const InputDecoration(
-                            labelText: "Cognome",
-                            prefixIcon: Icon(Icons.person_outline),
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) => (value == null || value.isEmpty)
-                              ? 'Inserisci il cognome'
-                              : null,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: emailController,
-                          decoration: const InputDecoration(
-                            labelText: "Email",
-                            prefixIcon: Icon(Icons.email),
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) => (value == null || value.isEmpty)
-                              ? 'Inserisci una email'
-                              : null,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: passwordController,
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            labelText: "Password",
-                            prefixIcon: Icon(Icons.lock),
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) => (value == null || value.isEmpty)
-                              ? 'Inserisci una password'
-                              : null,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: paeseController,
-                          decoration: const InputDecoration(
-                            labelText: "Paese / Città",
-                            prefixIcon: Icon(Icons.location_city),
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: nazioneController,
-                          decoration: const InputDecoration(
-                            labelText: "Nazione",
-                            prefixIcon: Icon(Icons.public),
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        if (signInError != null) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            signInError!,
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 24),
-                        _buildButton(
-                          text: "Registrati",
-                          onPressed: _signIn,
-                          isPrimary: true,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildButton(
-                          text: "Hai già un account? Accedi",
-                          onPressed: () => Navigator.pop(context),
-                          isPrimary: false,
-                        ),
-                      ],
-                    ),
-                  ),
+      body: Stack(
+        children: [
+          // Sfondo
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF0F2F2B),
+                  Color(0xFF0B3D35),
+                  Color(0xFF0A4A40),
                 ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
           ),
-        ),
+
+          Center(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 40,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Logo
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 20,
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: SizedBox(
+                          width: logoSize,
+                          height: logoSize,
+                          child: Image.asset(
+                            'assets/images/ecoalert_logo.png',
+                            fit: BoxFit.cover,
+                            alignment: Alignment(0, -0.35),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    const Text(
+                      "Registrati a EcoAlert",
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                    const SizedBox(height: 24),
+                    Form(
+                      key: formKey,
+                      child: Column(
+                        children: [
+                          _buildTextField(
+                            controller: nameController,
+                            label: "Nome",
+                            icon: Icons.person,
+                          ),
+                          const SizedBox(height: 16),
+
+                          _buildTextField(
+                            controller: cognomeController,
+                            label: "Cognome",
+                            icon: Icons.person_outline,
+                          ),
+                          const SizedBox(height: 16),
+
+                          _buildTextField(
+                            controller: emailController,
+                            label: "Email",
+                            icon: Icons.email,
+                          ),
+                          const SizedBox(height: 16),
+
+                          _buildTextField(
+                            controller: passwordController,
+                            label: "Password",
+                            icon: Icons.lock,
+                            obscure: true,
+                          ),
+                          const SizedBox(height: 16),
+
+                          _buildTextField(
+                            controller: codiceFiscaleController,
+                            label: "Codice Fiscale",
+                            icon: Icons.badge,
+                          ),
+                          const SizedBox(height: 16),
+
+                          _buildTextField(
+                            controller: numeroTelefonoController,
+                            label: "Numero di telefono",
+                            icon: Icons.phone,
+                          ),
+                          const SizedBox(height: 16),
+
+                          _buildTextField(
+                            controller: nazioneController,
+                            label: "Nazione",
+                            icon: Icons.public,
+                          ),
+                          if (signInError != null) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              signInError!,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 24),
+                          _buildButton(
+                            label: "Registrati",
+                            onTap: _signIn,
+                            isPrimary: true,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildButton(
+                            label: "Hai già un account? Accedi",
+                            onTap: () => Navigator.pop(context),
+                            isPrimary: false,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -262,12 +307,14 @@ class _SignInPageState extends State<SignInPage>
             ..cognome = cognomeController.text
             ..email = emailController.text
             ..password = passwordController.text
-            ..paese = paeseController.text
-            ..nazione = nazioneController.text,
+            ..codiceFiscale = codiceFiscaleController.text
+            ..numeroTelefono = numeroTelefonoController.text
+            ..nazione = nazioneController.text
+            ..ruolo = kIsWeb ? "ente" : "cittadino",
         ),
       );
 
-      final roleFromServer = response.data?.ruolo;
+      final roleFromServer = response.data?.ruolo?.toLowerCase().trim();
 
       if (kIsWeb && roleFromServer != "ente") {
         await _showErrorDialog("I cittadini non possono registrarsi da web.");

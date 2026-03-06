@@ -14,6 +14,7 @@ class HomePage extends StatefulWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
 
   const HomePage({
     super.key,
@@ -24,6 +25,7 @@ class HomePage extends StatefulWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
   });
 
   @override
@@ -32,7 +34,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  Future<List<SegnalazioneOutput>> futureReports = Future.value([]);
+  late Future<List<SegnalazioneOutput>> futureReports;
   Error? error;
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -40,22 +42,48 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshReports(initial: true);
-    });
 
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
+
     _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+
     _controller.forward();
+
+    futureReports = _loadReports();
+
+    _refreshReports();
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<List<SegnalazioneOutput>> _loadReports() async {
+    try {
+      final res = await widget.utentiApi.getSegnalazioniByUserId(
+        id: widget.userId,
+      );
+
+      if (res.data == null || res.data!.isEmpty) {
+        error = Error(
+          (b) => b
+            ..code = 404
+            ..message = "Non hai ancora effettuato segnalazioni.",
+        );
+        return [];
+      }
+
+      error = null;
+      return res.data!.toList();
+    } catch (e) {
+      error = Error((b) => b..message = "Errore durante il caricamento");
+      return [];
+    }
   }
 
   Future<void> _refreshReports({bool initial = false}) async {
@@ -106,6 +134,7 @@ class _HomePageState extends State<HomePage>
           segnalazioniApi: widget.segnalazioniApi,
           entiApi: widget.entiApi,
           commentiApi: widget.commentiApi,
+          allegatiApi: widget.allegatiApi,
         ),
       ),
       (route) => false,
@@ -115,9 +144,14 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.green,
-        child: const Icon(Icons.add, color: Colors.white),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: Colors.white.withOpacity(0.12),
+        elevation: 0,
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: const Text(
+          "Crea una nuova segnalazione",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
         onPressed: () async {
           final result = await Navigator.push(
             context,
@@ -135,63 +169,77 @@ class _HomePageState extends State<HomePage>
           if (result == true) await _refreshReports();
         },
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFe0f2f1), Color(0xFFb2dfdb), Color(0xFF80cbc4)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF0F2F2B),
+                  Color(0xFF0B3D35),
+                  Color(0xFF0A4A40),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // HEADER
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.logout, color: Colors.black),
-                        tooltip: "Logout",
-                        onPressed: _logout,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Le tue segnalazioni",
-                              style: TextStyle(
-                                fontFamily: "Poppins",
-                                fontWeight: FontWeight.bold,
-                                fontSize: 28,
-                                color: Colors.green.shade800,
-                              ),
+
+          SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // HEADER
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 20,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.logout,
+                              color: Colors.white70,
                             ),
-                            Text(
-                              "Tienile sotto controllo facilmente!",
-                              style: TextStyle(
-                                fontFamily: "Poppins",
-                                fontSize: 16,
-                                color: Colors.green.shade700,
-                              ),
-                            ),
-                          ],
+                            onPressed: _logout,
+                          ),
                         ),
-                      ),
-                      CircleAvatar(
-                        backgroundColor: Colors.green.shade700,
-                        child: IconButton(
-                          icon: const Icon(Icons.person, color: Colors.white),
-                          onPressed: () {
+
+                        const SizedBox(width: 16),
+
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                "Le tue segnalazioni",
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                "Tieni tutto sotto controllo",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -203,117 +251,141 @@ class _HomePageState extends State<HomePage>
                                   segnalazioniApi: widget.segnalazioniApi,
                                   entiApi: widget.entiApi,
                                   commentiApi: widget.commentiApi,
+                                  allegatiApi: widget.allegatiApi,
                                 ),
                               ),
                             );
                           },
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.08),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.person,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                // LISTA SEGNALAZIONI
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: _refreshReports,
-                    child: FutureBuilder<List<SegnalazioneOutput>>(
-                      future: futureReports,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(
-                              color: Colors.green,
-                              strokeWidth: 3,
-                            ),
-                          );
-                        }
+                  // LISTA SEGNALAZIONI
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: _refreshReports,
+                      child: FutureBuilder<List<SegnalazioneOutput>>(
+                        future: futureReports,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.green,
+                                strokeWidth: 3,
+                              ),
+                            );
+                          }
 
-                        if (error != null && error!.code == 404) {
-                          return Center(
-                            child: Text(
-                              error!.message ?? "Nessuna segnalazione creata",
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontFamily: "Poppins",
-                                fontWeight: FontWeight.w600,
-                                fontSize: 18,
+                          if (error != null && error!.code == 404) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Icon(
+                                    Icons.info_outline,
+                                    size: 48,
+                                    color: Colors.white54,
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    "Non hai ancora effettuato segnalazioni",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontFamily: "Poppins",
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 18,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
                               ),
-                              textAlign: TextAlign.center,
-                            ),
-                          );
-                        }
+                            );
+                          }
 
-                        if (error != null) {
-                          return Center(
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 32,
+                          if (error != null) {
+                            return Center(
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade600,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  "Errore ${error!.code}: ${error!.message}",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontFamily: "Poppins",
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
                               ),
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade600,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                            );
+                          }
+
+                          final items = snapshot.data ?? [];
+
+                          if (items.isEmpty) {
+                            return const Center(
                               child: Text(
-                                "Errore ${error!.code}: ${error!.message}",
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                "Non ci sono segnalazioni da mostrare",
+                                style: TextStyle(
                                   fontFamily: "Poppins",
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 18,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
-                            ),
-                          );
-                        }
+                            );
+                          }
 
-                        final items = snapshot.data ?? [];
-
-                        if (items.isEmpty) {
-                          return const Center(
-                            child: Text(
-                              "Non ci sono segnalazioni da mostrare",
-                              style: TextStyle(
-                                fontFamily: "Poppins",
-                                fontWeight: FontWeight.w600,
-                                fontSize: 18,
+                          return ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.all(16),
+                            itemCount: items.length,
+                            itemBuilder: (context, i) => Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: 16,
+                              ), // spazio tra le card
+                              child: _SegnalazioneCard(
+                                segnalazione: items[i],
+                                utentiApi: widget.utentiApi,
+                                userId: widget.userId,
+                                dio: widget.dio,
+                                authApi: widget.authApi,
+                                segnalazioniApi: widget.segnalazioniApi,
+                                entiApi: widget.entiApi,
+                                commentiApi: widget.commentiApi,
+                                allegatiApi: widget.allegatiApi,
+                                onRefresh: _refreshReports,
                               ),
-                              textAlign: TextAlign.center,
                             ),
                           );
-                        }
-
-                        return ListView.builder(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.all(16),
-                          itemCount: items.length,
-                          itemBuilder: (context, i) => Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: 16,
-                            ), // spazio tra le card
-                            child: _SegnalazioneCard(
-                              segnalazione: items[i],
-                              utentiApi: widget.utentiApi,
-                              userId: widget.userId,
-                              dio: widget.dio,
-                              authApi: widget.authApi,
-                              segnalazioniApi: widget.segnalazioniApi,
-                              entiApi: widget.entiApi,
-                              commentiApi: widget.commentiApi,
-                              onRefresh: _refreshReports,
-                            ),
-                          ),
-                        );
-                      },
+                        },
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -331,6 +403,7 @@ class _SegnalazioneCard extends StatelessWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
   final Future<void> Function()? onRefresh;
 
   const _SegnalazioneCard({
@@ -342,6 +415,7 @@ class _SegnalazioneCard extends StatelessWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
     this.onRefresh,
     Key? key,
   }) : super(key: key);
@@ -351,8 +425,8 @@ class _SegnalazioneCard extends StatelessWidget {
     final s = segnalazione;
 
     return Material(
-      elevation: 6,
-      shadowColor: Colors.grey.withOpacity(0.2),
+      color: Colors.transparent,
+      elevation: 0,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: () async {
@@ -369,6 +443,7 @@ class _SegnalazioneCard extends StatelessWidget {
                   segnalazioniApi: segnalazioniApi,
                   entiApi: entiApi,
                   commentiApi: commentiApi,
+                  allegatiApi: allegatiApi,
                 ),
               ),
             );
@@ -380,10 +455,18 @@ class _SegnalazioneCard extends StatelessWidget {
         },
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Colors.white.withOpacity(0.06),
             borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.12)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.35),
+                blurRadius: 25,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -395,8 +478,9 @@ class _SegnalazioneCard extends StatelessWidget {
                     child: Text(
                       s.titolo ?? "Segnalazione",
                       style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
                         fontFamily: "Poppins",
                       ),
                     ),
@@ -408,7 +492,7 @@ class _SegnalazioneCard extends StatelessWidget {
               Text(
                 s.descrizione ?? "",
                 style: TextStyle(
-                  color: Colors.grey.shade700,
+                  color: Colors.white,
                   fontSize: 15,
                   fontFamily: "Poppins",
                 ),
@@ -418,7 +502,11 @@ class _SegnalazioneCard extends StatelessWidget {
               const SizedBox(height: 12),
               const Align(
                 alignment: Alignment.centerRight,
-                child: Icon(Icons.chevron_right, size: 28, color: Colors.grey),
+                child: Icon(
+                  Icons.chevron_right,
+                  size: 22,
+                  color: Colors.white30,
+                ),
               ),
             ],
           ),
@@ -428,47 +516,23 @@ class _SegnalazioneCard extends StatelessWidget {
   }
 
   Widget _buildBadge(StatoEnum? stato) {
-    final colorBg =
-        {
-          StatoEnum.INSERITO: Colors.green.shade100,
-          StatoEnum.PRESO_IN_CARICO: Colors.blue.shade100,
-          StatoEnum.SOSPESO: Colors.yellow.shade100,
-          StatoEnum.CHIUSO: Colors.red.shade300,
-        }[stato] ??
-        Colors.grey.shade200;
-
-    final colorText = Colors.black;
-
-    final icon =
-        {
-          StatoEnum.INSERITO: Icons.fiber_new_rounded,
-          StatoEnum.PRESO_IN_CARICO: Icons.work_rounded,
-          StatoEnum.SOSPESO: Icons.pause_circle_filled_rounded,
-          StatoEnum.CHIUSO: Icons.check_circle_rounded,
-        }[stato] ??
-        Icons.help_outline;
+    final label = stato?.name.toUpperCase() ?? "SCONOSCIUTO";
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: colorBg,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: colorText),
-          const SizedBox(width: 4),
-          Text(
-            stato?.name.toUpperCase() ?? "SCONOSCIUTO",
-            style: TextStyle(
-              color: colorText,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-              fontFamily: "Poppins",
-            ),
-          ),
-        ],
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white70,
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }

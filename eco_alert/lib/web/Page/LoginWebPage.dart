@@ -1,6 +1,5 @@
 import 'dart:math';
-import 'package:eco_alert/web/Page/HomeWebPage.dart';
-import 'package:eco_alert/web/Page/SignInWebPage.dart';
+import 'package:eco_alert/utils/web_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,6 +13,7 @@ class LoginWebPage extends StatefulWidget {
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
+  final AllegatiApi allegatiApi;
 
   const LoginWebPage({
     super.key,
@@ -23,6 +23,7 @@ class LoginWebPage extends StatefulWidget {
     required this.segnalazioniApi,
     required this.entiApi,
     required this.commentiApi,
+    required this.allegatiApi,
   });
 
   @override
@@ -36,6 +37,8 @@ class _LoginWebPageState extends State<LoginWebPage>
   final formKey = GlobalKey<FormState>();
   bool isLoading = false;
   String? loginError;
+
+  bool _showPassword = false;
 
   late AnimationController _controller;
   late Animation<double> _fade;
@@ -165,20 +168,12 @@ class _LoginWebPageState extends State<LoginWebPage>
         return;
       }
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => HomeWebPage(
-            utentiApi: widget.utentiApi,
-            userId: response.data!.userId!,
-            dio: widget.dio,
-            authApi: widget.authApi,
-            segnalazioniApi: widget.segnalazioniApi,
-            entiApi: widget.entiApi,
-            commentiApi: widget.commentiApi,
-          ),
-        ),
-      );
+      // Naviga a HomeWeb includendo userId nella query string così il reload conserva l'utente
+      final routeName = '/HomeWeb?userId=${response.data!.userId!}';
+      // salva userId e route per garantire restore su Invio/refresh
+      WebStorage.setUserId(response.data!.userId!);
+      WebStorage.setLastRoute(routeName);
+      Navigator.pushReplacementNamed(context, routeName);
     } catch (ex) {
       String message = "Si è verificato un errore. Riprova.";
       if (ex is DioException) {
@@ -292,10 +287,16 @@ class _LoginWebPageState extends State<LoginWebPage>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Image.asset(
-                        'assets/images/LOGO.png',
-                        width: logoSize,
-                        height: logoSize,
+                      ClipOval(
+                        child: SizedBox(
+                          width: logoSize,
+                          height: logoSize,
+                          child: Image.asset(
+                            'assets/images/ecoalert_logo.png',
+                            fit: BoxFit.cover,
+                            alignment: Alignment(0, -0.35),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 24),
                       Text(
@@ -318,11 +319,47 @@ class _LoginWebPageState extends State<LoginWebPage>
                               icon: Icons.email,
                             ),
                             const SizedBox(height: 16),
-                            _buildTextField(
+                            TextFormField(
                               controller: passwordController,
-                              label: "Password",
-                              icon: Icons.lock,
-                              obscureText: true,
+                              obscureText: !_showPassword,
+                              validator: (v) => (v == null || v.isEmpty)
+                                  ? "Campo obbligatorio"
+                                  : null,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                prefixIcon: Icon(
+                                  Icons.lock,
+                                  color: Colors.white70,
+                                ),
+                                labelText: "Password",
+                                labelStyle: const TextStyle(
+                                  color: Colors.white70,
+                                ),
+                                filled: true,
+                                fillColor: Colors.white.withOpacity(0.08),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFF00BFA5),
+                                    width: 2,
+                                  ),
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _showPassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    color: Colors.white70,
+                                  ),
+                                  onPressed: () => setState(
+                                    () => _showPassword = !_showPassword,
+                                  ),
+                                ),
+                              ),
                             ),
                             if (loginError != null) ...[
                               const SizedBox(height: 12),
@@ -340,19 +377,8 @@ class _LoginWebPageState extends State<LoginWebPage>
                             const SizedBox(height: 12),
                             // Pulsante secondario login
                             TextButton(
-                              onPressed: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => SignInWebPage(
-                                    authApi: widget.authApi,
-                                    utentiApi: widget.utentiApi,
-                                    dio: widget.dio,
-                                    segnalazioniApi: widget.segnalazioniApi,
-                                    entiApi: widget.entiApi,
-                                    commentiApi: widget.commentiApi,
-                                  ),
-                                ),
-                              ),
+                              onPressed: () =>
+                                  Navigator.pushNamed(context, '/SignInWeb'),
                               child: Text(
                                 "Non hai un account?, Registrati.",
                                 style: TextStyle(
