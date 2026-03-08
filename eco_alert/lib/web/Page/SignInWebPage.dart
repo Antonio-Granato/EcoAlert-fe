@@ -37,7 +37,7 @@ class _SignInWebPageState extends State<SignInWebPage>
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final paeseController = TextEditingController();
-  final nazioneController = TextEditingController();
+  final cittaController = TextEditingController();
   final formKey = GlobalKey<FormState>();
 
   bool isLoading = false;
@@ -100,7 +100,7 @@ class _SignInWebPageState extends State<SignInWebPage>
     emailController.dispose();
     passwordController.dispose();
     paeseController.dispose();
-    nazioneController.dispose();
+    cittaController.dispose();
     super.dispose();
   }
 
@@ -170,7 +170,7 @@ class _SignInWebPageState extends State<SignInWebPage>
             ..cognome = cognomeController.text
             ..email = emailController.text
             ..password = passwordController.text
-            ..nazione = nazioneController.text
+            ..citta = cittaController.text
             ..ruolo = "ente",
         ),
       );
@@ -459,15 +459,9 @@ class _SignInWebPageState extends State<SignInWebPage>
                               ),
                               const SizedBox(height: 16),
                               _buildTextField(
-                                controller: paeseController,
-                                label: "Paese / Città",
+                                controller: cittaController,
+                                label: "Città",
                                 icon: Icons.location_city,
-                              ),
-                              const SizedBox(height: 16),
-                              _buildTextField(
-                                controller: nazioneController,
-                                label: "Nazione",
-                                icon: Icons.public,
                               ),
                               if (signInError != null) ...[
                                 const SizedBox(height: 12),
