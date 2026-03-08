@@ -163,6 +163,7 @@ class _HomePageState extends State<HomePage>
                 authApi: widget.authApi,
                 segnalazioniApi: widget.segnalazioniApi,
                 entiApi: widget.entiApi,
+                allegatiApi: widget.allegatiApi,
               ),
             ),
           );

@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:openapi/openapi.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
 import 'dart:async';
 
@@ -12,6 +15,7 @@ class CreaSegnalazionePage extends StatefulWidget {
   final Dio dio;
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
+  final AllegatiApi allegatiApi;
 
   const CreaSegnalazionePage({
     super.key,
@@ -21,6 +25,7 @@ class CreaSegnalazionePage extends StatefulWidget {
     required this.authApi,
     required this.segnalazioniApi,
     required this.entiApi,
+    required this.allegatiApi,
     s,
   });
 
@@ -36,19 +41,35 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
   final MapController _mapController = MapController();
   final TextEditingController _searchController = TextEditingController();
 
+  List<EnteOutput> _enti = [];
+  List<XFile> _immagini = [];
   List<dynamic> _searchResults = [];
+
   LatLng? _selectedPosition;
   double _currentZoom = 15;
   int? _selectedEnteId;
   bool _loading = false;
   Timer? _debounce;
 
-  List<EnteOutput> _enti = [];
-
   @override
   void initState() {
     super.initState();
     _loadEnti();
+  }
+
+  Future<void> pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    if (_immagini.length >= 5) {
+      _showErrorDialog("Puoi caricare massimo 5 immagini");
+      return;
+    }
+    if (image != null) {
+      setState(() {
+        _immagini.add(image);
+      });
+    }
   }
 
   Future<void> _loadEnti() async {
@@ -138,10 +159,33 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
     );
 
     try {
-      await widget.segnalazioniApi.createSegnalazione(
+      final response = await widget.segnalazioniApi.createSegnalazione(
         id: widget.userId,
         segnalazioneInput: input,
       );
+
+      final segnalazioneCreata = response.data;
+
+      if (segnalazioneCreata != null && _immagini.isNotEmpty) {
+        for (int i = 0; i < _immagini.length; i++) {
+          final img = _immagini[i];
+
+          final extension = img.name.split('.').last;
+
+          final filename =
+              "ecoalert_${segnalazioneCreata.id}_${i + 1}.${extension}";
+
+          final file = await MultipartFile.fromFile(
+            img.path,
+            filename: filename,
+          );
+
+          await widget.allegatiApi.uploadAllegato(
+            idSegnalazione: segnalazioneCreata.id!,
+            file: file,
+          );
+        }
+      }
 
       _showSuccessDialog("Segnalazione creata con successo");
     } on DioException catch (ex) {
@@ -604,6 +648,10 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
 
                                     DropdownButtonFormField<int>(
                                       value: _selectedEnteId,
+                                      dropdownColor: const Color(
+                                        0xFF0F2F2B,
+                                      ), // sfondo menu
+                                      iconEnabledColor: Colors.white70,
                                       style: const TextStyle(
                                         color: Colors.white,
                                       ),
@@ -641,6 +689,108 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
                                       validator: (v) => v == null
                                           ? "Seleziona un ente"
                                           : null,
+                                    ),
+
+                                    const SizedBox(height: 20),
+
+                                    const Text(
+                                      "Allegati",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 10),
+
+                                    SizedBox(
+                                      height: 100,
+                                      child: ListView(
+                                        scrollDirection: Axis.horizontal,
+                                        children: [
+                                          // immagini selezionate
+                                          ..._immagini.asMap().entries.map((
+                                            entry,
+                                          ) {
+                                            final index = entry.key;
+                                            final img = entry.value;
+
+                                            return Stack(
+                                              children: [
+                                                Container(
+                                                  margin: const EdgeInsets.only(
+                                                    right: 10,
+                                                  ),
+                                                  width: 100,
+                                                  height: 100,
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                    image: DecorationImage(
+                                                      image: FileImage(
+                                                        File(img.path),
+                                                      ),
+                                                      fit: BoxFit.cover,
+                                                    ),
+                                                  ),
+                                                ),
+
+                                                Positioned(
+                                                  right: 6,
+                                                  top: 6,
+                                                  child: GestureDetector(
+                                                    onTap: () {
+                                                      setState(() {
+                                                        _immagini.removeAt(
+                                                          index,
+                                                        );
+                                                      });
+                                                    },
+                                                    child: Container(
+                                                      decoration:
+                                                          const BoxDecoration(
+                                                            color:
+                                                                Colors.black54,
+                                                            shape:
+                                                                BoxShape.circle,
+                                                          ),
+                                                      child: const Icon(
+                                                        Icons.close,
+                                                        size: 18,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          }),
+
+                                          // bottone aggiungi foto
+                                          GestureDetector(
+                                            onTap: pickImage,
+                                            child: Container(
+                                              width: 100,
+                                              height: 100,
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: Colors.white24,
+                                                ),
+                                              ),
+                                              child: const Center(
+                                                child: Icon(
+                                                  Icons.add_a_photo,
+                                                  color: Colors.white70,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
 
                                     const SizedBox(height: 26),
