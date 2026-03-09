@@ -19,7 +19,7 @@ class _SignInPageState extends State<SignInPage>
   final cognomeController = TextEditingController();
   final codiceFiscaleController = TextEditingController();
   final numeroTelefonoController = TextEditingController();
-  final nazioneController = TextEditingController();
+  final cittaController = TextEditingController();
 
   final formKey = GlobalKey<FormState>();
   bool isLoading = false;
@@ -50,7 +50,7 @@ class _SignInPageState extends State<SignInPage>
     cognomeController.dispose();
     emailController.dispose();
     passwordController.dispose();
-    nazioneController.dispose();
+    cittaController.dispose();
     codiceFiscaleController.dispose();
     numeroTelefonoController.dispose();
     super.dispose();
@@ -252,8 +252,8 @@ class _SignInPageState extends State<SignInPage>
                           const SizedBox(height: 16),
 
                           _buildTextField(
-                            controller: nazioneController,
-                            label: "Nazione",
+                            controller: cittaController,
+                            label: "Città",
                             icon: Icons.public,
                           ),
                           if (signInError != null) ...[
@@ -309,7 +309,7 @@ class _SignInPageState extends State<SignInPage>
             ..password = passwordController.text
             ..codiceFiscale = codiceFiscaleController.text
             ..numeroTelefono = numeroTelefonoController.text
-            ..nazione = nazioneController.text
+            ..citta = cittaController.text
             ..ruolo = kIsWeb ? "ente" : "cittadino",
         ),
       );

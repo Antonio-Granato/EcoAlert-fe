@@ -75,24 +75,18 @@ class _HomeWebPageState extends State<HomeWebPage> {
     try {
       final reports = await _loadReports();
 
-      final inseriteCount = reports
-          .where((r) => r.stato == StatoEnum.INSERITO)
-          .length;
-      final ricevuteCount = reports
-          .where((r) => r.stato == StatoEnum.RICEVUTO)
-          .length;
-      final sospeseCount = reports
-          .where((r) => r.stato == StatoEnum.SOSPESO)
-          .length;
-      final chiuseCount = reports
-          .where((r) => r.stato == StatoEnum.CHIUSO)
-          .length;
+      final stats = await widget.entiApi.getSegnalazioniStatsByEnte(
+        idEnte: widget.userId,
+      );
+
+      final data = stats.data;
 
       setState(() {
-        inserite = inseriteCount;
-        ricevute = ricevuteCount;
-        sospese = sospeseCount;
-        chiuse = chiuseCount;
+        inserite = data?.INSERITO ?? 0;
+        ricevute = data?.RICEVUTO ?? 0;
+        sospese = data?.SOSPESO ?? 0;
+        chiuse = data?.CHIUSO ?? 0;
+
         futureReports = Future.value(reports);
         error = null;
       });

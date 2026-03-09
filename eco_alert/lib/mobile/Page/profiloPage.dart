@@ -378,7 +378,7 @@ class _profiloPageState extends State<profiloPage> {
           const SizedBox(height: 16),
           _infoRow(Icons.person, "Codice Fiscale", utente.codiceFiscale),
           const SizedBox(height: 16),
-          _infoRow(Icons.flag, "Nazione", utente.nazione),
+          _infoRow(Icons.flag, "Città", utente.citta),
         ],
       ),
     );
