@@ -577,8 +577,31 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
         builder: (_) => Dialog(
           backgroundColor: Colors.black,
           insetPadding: const EdgeInsets.all(16),
-          child: InteractiveViewer(
-            child: Image.memory(response.data!, fit: BoxFit.contain),
+          child: Stack(
+            children: [
+              // IMMAGINE ZOOMABILE
+              InteractiveViewer(
+                child: Image.memory(response.data!, fit: BoxFit.contain),
+              ),
+
+              // FRECCIA INDIETRO
+              Positioned(
+                top: 10,
+                left: 10,
+                child: SafeArea(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       );

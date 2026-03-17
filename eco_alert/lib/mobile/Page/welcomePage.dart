@@ -227,12 +227,12 @@ class _WelcomePageState extends State<WelcomePage>
                   ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: 520),
                     child: Text(
-                      "Segnala e monitora le criticità ambientali nel tuo territorio.",
+                      "Segnala le criticità ambientali nel tuo territorio.",
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         fontSize: subtitleSize,
                         fontWeight: FontWeight.w300,
-                        height: 1.9,
+                        height: 1.8,
                         letterSpacing: 0.6,
                         color: Colors.white,
                       ),

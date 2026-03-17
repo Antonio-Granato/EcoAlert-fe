@@ -165,6 +165,7 @@ class _SignInPageState extends State<SignInPage>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    const SizedBox(height: 24),
                     // Logo
                     Container(
                       padding: const EdgeInsets.all(20),
@@ -191,7 +192,7 @@ class _SignInPageState extends State<SignInPage>
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 12),
 
                     const Text(
                       "Registrati a EcoAlert",
