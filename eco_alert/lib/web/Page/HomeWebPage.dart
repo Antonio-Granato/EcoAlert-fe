@@ -40,8 +40,11 @@ class _HomeWebPageState extends State<HomeWebPage> {
   Future<List<SegnalazioneOutput>> futureReports = Future.value([]);
 
   late Future<UtenteDettaglioOutput?> futureUser;
-
-  late final isMobile = MediaQuery.of(context).size.width < 900;
+  int inserite = 0;
+  int ricevute = 0;
+  int sospese = 0;
+  int chiuse = 0;
+  StatoEnum? filtroStato;
   Error? error;
 
   @override
@@ -61,16 +64,29 @@ class _HomeWebPageState extends State<HomeWebPage> {
   }
 
   Future<List<SegnalazioneOutput>> _loadReports() async {
-    final res = await widget.utentiApi.getSegnalazioniByUserId(
-      id: widget.userId,
+    final res = await widget.entiApi.getSegnalazioniByEnteAndStato(
+      idEnte: widget.userId,
     );
+
     return List<SegnalazioneOutput>.from(res.data ?? []);
   }
 
   Future<void> _refreshReports() async {
     try {
       final reports = await _loadReports();
+
+      final stats = await widget.entiApi.getSegnalazioniStatsByEnte(
+        idEnte: widget.userId,
+      );
+
+      final data = stats.data;
+
       setState(() {
+        inserite = data?.INSERITO ?? 0;
+        ricevute = data?.RICEVUTO ?? 0;
+        sospese = data?.SOSPESO ?? 0;
+        chiuse = data?.CHIUSO ?? 0;
+
         futureReports = Future.value(reports);
         error = null;
       });
@@ -80,6 +96,57 @@ class _HomeWebPageState extends State<HomeWebPage> {
         error = Error((b) => b..message = "Errore caricamento segnalazioni");
       });
     }
+  }
+
+  Widget _statsCard(
+    String title,
+    int value,
+    Color color,
+    IconData icon,
+    StatoEnum stato,
+  ) {
+    return Expanded(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          if (value == 0) return; // non fare nulla se non ci sono segnalazioni
+
+          setState(() {
+            if (filtroStato == stato) {
+              filtroStato = null;
+            } else {
+              filtroStato = stato;
+            }
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: filtroStato == stato
+                ? color.withOpacity(0.25)
+                : Colors.white.withOpacity(0.04),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 28),
+              const SizedBox(height: 10),
+              Text(
+                value.toString(),
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(title, style: const TextStyle(color: Colors.white70)),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _mapCard(Widget child) {
@@ -315,7 +382,13 @@ class _HomeWebPageState extends State<HomeWebPage> {
                           );
                         }
 
-                        final reports = snapshot.data ?? [];
+                        final allReports = snapshot.data ?? [];
+
+                        final reports = filtroStato == null
+                            ? allReports
+                            : allReports
+                                  .where((r) => r.stato == filtroStato)
+                                  .toList();
 
                         if (reports.isEmpty) {
                           return const Center(
@@ -342,18 +415,46 @@ class _HomeWebPageState extends State<HomeWebPage> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        // LOGO APP
                                         Row(
                                           children: [
-                                            Image.asset(
-                                              'assets/images/ecoalert_logo.png',
-                                              height: 100,
+                                            _statsCard(
+                                              "Inserite",
+                                              inserite,
+                                              Colors.greenAccent,
+                                              Icons.fiber_new_rounded,
+                                              StatoEnum.INSERITO,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            _statsCard(
+                                              "Ricevute",
+                                              ricevute,
+                                              Colors.blueAccent,
+                                              Icons.work_rounded,
+                                              StatoEnum.RICEVUTO,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            _statsCard(
+                                              "Sospese",
+                                              sospese,
+                                              Colors.orangeAccent,
+                                              Icons.pause_circle_filled_rounded,
+                                              StatoEnum.SOSPESO,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            _statsCard(
+                                              "Chiuse",
+                                              chiuse,
+                                              Colors.redAccent,
+                                              Icons.check_circle_rounded,
+                                              StatoEnum.CHIUSO,
                                             ),
                                           ],
                                         ),
 
-                                        SizedBox(
-                                          height: 700, // ridotta da 700
+                                        const SizedBox(height: 15),
+
+                                        AspectRatio(
+                                          aspectRatio: 16 / 8,
                                           child: _mapCard(
                                             FlutterMapWidget(
                                               segnalazioni: reports,
@@ -448,7 +549,6 @@ class _HomeWebPageState extends State<HomeWebPage> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       SizedBox(
-                                        height: 700,
                                         child: _mapCard(
                                           FlutterMapWidget(
                                             segnalazioni: reports,

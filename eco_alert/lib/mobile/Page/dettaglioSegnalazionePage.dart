@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
 
 class DettaglioSegnalazionePage extends StatefulWidget {
   final UtentiApi utentiApi;
@@ -576,8 +577,31 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
         builder: (_) => Dialog(
           backgroundColor: Colors.black,
           insetPadding: const EdgeInsets.all(16),
-          child: InteractiveViewer(
-            child: Image.memory(response.data!, fit: BoxFit.contain),
+          child: Stack(
+            children: [
+              // IMMAGINE ZOOMABILE
+              InteractiveViewer(
+                child: Image.memory(response.data!, fit: BoxFit.contain),
+              ),
+
+              // FRECCIA INDIETRO
+              Positioned(
+                top: 10,
+                left: 10,
+                child: SafeArea(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -599,6 +623,8 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
 
   // ======== ALLEGATI INTERATTIVI ========
   Widget _buildAllegatiDarkInteractive(SegnalazioneOutput s) {
+    final allegati = s.allegati?.toList() ?? [];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -619,32 +645,84 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        if (s.allegati != null && s.allegati!.isNotEmpty)
-          ...s.allegati!.map(
-            (a) => Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    "- ${a.nomeFile}",
-                    style: const TextStyle(color: Colors.white70),
+
+        const SizedBox(height: 10),
+
+        if (allegati.isEmpty)
+          const Text("Nessun allegato", style: TextStyle(color: Colors.white38))
+        else
+          SizedBox(
+            height: 110,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: allegati.map((a) {
+                return FutureBuilder<Response<Uint8List?>>(
+                  future: widget.allegatiApi.downloadAllegato(
+                    idAllegato: a.id!,
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.open_in_new, color: Colors.white70),
-                  onPressed: () => _apriAllegato(a.id!),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.redAccent),
-                  onPressed: () => _deleteAllegato(a.id!),
-                ),
-              ],
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return Container(
+                        width: 100,
+                        margin: const EdgeInsets.only(right: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white10,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
+                    }
+
+                    final bytes = snapshot.data!.data!;
+
+                    return Stack(
+                      children: [
+                        GestureDetector(
+                          onTap: () => _apriAllegato(a.id!),
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            margin: const EdgeInsets.only(right: 10),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              image: DecorationImage(
+                                image: MemoryImage(bytes),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // bottone elimina
+                        Positioned(
+                          right: 6,
+                          top: 6,
+                          child: GestureDetector(
+                            onTap: () => _deleteAllegato(a.id!),
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Padding(
+                                padding: EdgeInsets.all(4),
+                                child: Icon(
+                                  Icons.close,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              }).toList(),
             ),
-          ),
-        if (s.allegati == null || s.allegati!.isEmpty)
-          const Text(
-            "Nessun allegato",
-            style: TextStyle(color: Colors.white38),
           ),
       ],
     );

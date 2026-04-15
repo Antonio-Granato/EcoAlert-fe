@@ -533,7 +533,7 @@ class _ProfiloWebPageState extends State<ProfiloWebPage>
           const Divider(color: Colors.white24),
           _infoRow(Icons.business_outlined, "Nome Ente", utente.nomeEnte),
           const Divider(color: Colors.white24),
-          _infoRow(Icons.flag, "Nazione", utente.nazione),
+          _infoRow(Icons.flag, "Città", utente.citta),
         ],
       ),
     );

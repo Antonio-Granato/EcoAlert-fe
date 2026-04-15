@@ -368,17 +368,17 @@ class _profiloPageState extends State<profiloPage> {
       ),
       child: Column(
         children: [
-          _infoRow(Icons.email, "Email", utente.email),
+          _infoRow(Icons.person, "Cognome", utente.cognome),
           const SizedBox(height: 16),
           _infoRow(Icons.person_outline, "Nome", utente.nome),
           const SizedBox(height: 16),
-          _infoRow(Icons.person, "Cognome", utente.cognome),
-          const SizedBox(height: 16),
-          _infoRow(Icons.phone, "Numero di telefono", utente.numeroTelefono),
+          _infoRow(Icons.flag, "Città", utente.citta),
           const SizedBox(height: 16),
           _infoRow(Icons.person, "Codice Fiscale", utente.codiceFiscale),
           const SizedBox(height: 16),
-          _infoRow(Icons.flag, "Nazione", utente.nazione),
+          _infoRow(Icons.email, "Email", utente.email),
+          const SizedBox(height: 16),
+          _infoRow(Icons.phone, "Numero di telefono", utente.numeroTelefono),
         ],
       ),
     );
