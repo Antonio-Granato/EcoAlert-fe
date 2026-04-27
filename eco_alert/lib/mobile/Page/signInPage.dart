@@ -311,11 +311,16 @@ class _SignInPageState extends State<SignInPage>
             ..codiceFiscale = codiceFiscaleController.text
             ..numeroTelefono = numeroTelefonoController.text
             ..citta = cittaController.text
-            ..ruolo = kIsWeb ? "ente" : "cittadino",
+            ..ruolo = kIsWeb ? "ENTE" : "CITTADINO",
         ),
       );
 
       final roleFromServer = response.data?.ruolo?.toLowerCase().trim();
+
+      if (roleFromServer == null) {
+        await _showErrorDialog("Ruolo non valido");
+        return;
+      }
 
       if (kIsWeb && roleFromServer != "ente") {
         await _showErrorDialog("I cittadini non possono registrarsi da web.");
@@ -351,7 +356,7 @@ class _SignInPageState extends State<SignInPage>
             ],
           ),
           content: Text(
-            "Benvenuto, ${nameController.text}!\nIl tuo account è stato creato con successo.\nUserID: ${response.data?.id}",
+            "Benvenuto, ${nameController.text}!\nIl tuo account è stato creato con successo.",
             style: const TextStyle(fontSize: 16),
             softWrap: true,
           ),

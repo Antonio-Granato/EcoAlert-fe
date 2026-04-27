@@ -91,6 +91,7 @@ class _HomeWebPageState extends State<HomeWebPage> {
         error = null;
       });
     } catch (e) {
+      print(e);
       setState(() {
         futureReports = Future.value([]);
         error = Error((b) => b..message = "Errore caricamento segnalazioni");

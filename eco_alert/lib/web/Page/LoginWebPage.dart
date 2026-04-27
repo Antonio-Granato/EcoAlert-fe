@@ -152,16 +152,19 @@ class _LoginWebPageState extends State<LoginWebPage>
         ),
       );
 
+      WebStorage.setToken(response.data!.token!);
+      WebStorage.setUserId(response.data!.userId!);
+
       final ruolo = response.data?.ruolo;
 
-      if (!kIsWeb && ruolo != "cittadino") {
+      if (!kIsWeb && ruolo != "CITTADINO") {
         await _showErrorDialog(
           "Accesso negato: gli enti non possono accedere da mobile.",
         );
         return;
       }
 
-      if (kIsWeb && ruolo != "ente") {
+      if (kIsWeb && ruolo != "ENTE") {
         await _showErrorDialog(
           "Accesso negato: i cittadini non possono accedere da web.",
         );

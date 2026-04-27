@@ -779,6 +779,7 @@ components:
           type: string
 
     UtenteInput:
+      type: object
       properties:
         nome:
           type: string

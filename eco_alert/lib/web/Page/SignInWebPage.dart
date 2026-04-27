@@ -162,8 +162,10 @@ class _SignInWebPageState extends State<SignInWebPage>
       signInError = null;
     });
 
+    final ruolo = kIsWeb ? "ENTE" : "CITTADINO";
+
     try {
-      final response = await widget.authApi.signIn(
+      await widget.authApi.signIn(
         utenteInput: UtenteInput(
           (b) => b
             ..nome = nameController.text
@@ -171,21 +173,9 @@ class _SignInWebPageState extends State<SignInWebPage>
             ..email = emailController.text
             ..password = passwordController.text
             ..citta = cittaController.text
-            ..ruolo = "ente",
+            ..ruolo = ruolo,
         ),
       );
-
-      final roleFromServer = response.data?.ruolo;
-
-      if (kIsWeb && roleFromServer != "ente") {
-        await _showErrorDialog("I cittadini non possono registrarsi da web.");
-        return;
-      }
-
-      if (!kIsWeb && roleFromServer != "cittadino") {
-        await _showErrorDialog("Gli enti non possono registrarsi da mobile.");
-        return;
-      }
 
       // Dialog di successo
       await showDialog(
@@ -211,7 +201,7 @@ class _SignInWebPageState extends State<SignInWebPage>
             ],
           ),
           content: Text(
-            "Benvenuto, ${nameController.text}!\nIl tuo account è stato creato con successo.\nUserID: ${response.data?.id}",
+            "Benvenuto, ${nameController.text}!\nIl tuo account è stato creato con successo.",
             style: const TextStyle(fontSize: 16),
           ),
           actions: [

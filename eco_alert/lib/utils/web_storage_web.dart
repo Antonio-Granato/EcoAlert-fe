@@ -1,19 +1,36 @@
-import 'dart:html' as html;
+import 'dart:html';
 
 class WebStorage {
-  static void setLastRoute(String route) =>
-      html.window.localStorage['eco_last_route'] = route;
-  static String? getLastRoute() => html.window.localStorage['eco_last_route'];
-  static void setUserId(int id) =>
-      html.window.localStorage['eco_user_id'] = id.toString();
+  static const _tokenKey = 'token';
+  static const _userIdKey = 'userId';
+  static const _routeKey = 'lastRoute';
+
+  static void setToken(String token) {
+    window.localStorage[_tokenKey] = token;
+  }
+
+  static String? getToken() {
+    return window.localStorage[_tokenKey];
+  }
+
+  static void setUserId(int id) {
+    window.localStorage[_userIdKey] = id.toString();
+  }
+
   static int? getUserId() {
-    final v = html.window.localStorage['eco_user_id'];
-    if (v == null) return null;
-    return int.tryParse(v);
+    final val = window.localStorage[_userIdKey];
+    return val != null ? int.tryParse(val) : null;
+  }
+
+  static void setLastRoute(String route) {
+    window.localStorage[_routeKey] = route;
+  }
+
+  static String? getLastRoute() {
+    return window.localStorage[_routeKey];
   }
 
   static void clearAll() {
-    html.window.localStorage.remove('eco_user_id');
-    html.window.localStorage.remove('eco_last_route');
+    window.localStorage.clear();
   }
 }

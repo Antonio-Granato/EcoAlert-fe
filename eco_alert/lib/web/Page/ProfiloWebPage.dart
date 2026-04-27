@@ -190,22 +190,6 @@ class _ProfiloWebPageState extends State<ProfiloWebPage>
             ],
           ),
         ),
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert, color: Colors.white),
-          color: const Color(0xFF0F4F45),
-          onSelected: (value) {
-            if (value == 'delete') _confirmDeleteUser();
-          },
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'delete',
-              child: Text(
-                'Elimina account',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
