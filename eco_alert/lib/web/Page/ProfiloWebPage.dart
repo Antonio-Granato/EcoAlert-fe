@@ -87,7 +87,7 @@ class _ProfiloWebPageState extends State<ProfiloWebPage>
 
   Future<UtenteDettaglioOutput?> _loadUser() async {
     try {
-      final res = await widget.utentiApi.getUserById(id: widget.userId);
+      final res = await widget.utentiApi.getMe();
       return res.data;
     } on DioException catch (e) {
       String msg = "Errore imprevisto.";
@@ -265,7 +265,7 @@ class _ProfiloWebPageState extends State<ProfiloWebPage>
 
   Future<void> _deleteUser() async {
     try {
-      await widget.utentiApi.deleteUser(id: widget.userId);
+      await widget.utentiApi.deleteUser();
 
       if (!mounted) return;
 

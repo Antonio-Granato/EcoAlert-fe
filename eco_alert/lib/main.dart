@@ -132,7 +132,6 @@ class _MyAppState extends State<MyApp> {
               authApi: authApi,
               utentiApi: utentiApi,
               dio: dio,
-              userId: 0,
               segnalazioniApi: segnalazioniApi,
               entiApi: entiApi,
               commentiApi: commentiApi,

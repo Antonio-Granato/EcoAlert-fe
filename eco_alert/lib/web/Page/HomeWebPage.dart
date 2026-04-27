@@ -56,7 +56,7 @@ class _HomeWebPageState extends State<HomeWebPage> {
 
   Future<UtenteDettaglioOutput?> _loadUser() async {
     try {
-      final res = await widget.utentiApi.getUserById(id: widget.userId);
+      final res = await widget.utentiApi.getMe();
       return res.data;
     } catch (_) {
       return null;

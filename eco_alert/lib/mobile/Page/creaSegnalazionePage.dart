@@ -9,7 +9,6 @@ import 'package:dio/dio.dart';
 import 'dart:async';
 
 class CreaSegnalazionePage extends StatefulWidget {
-  final int userId;
   final UtentiApi utentiApi;
   final AuthApi authApi;
   final Dio dio;
@@ -19,14 +18,12 @@ class CreaSegnalazionePage extends StatefulWidget {
 
   const CreaSegnalazionePage({
     super.key,
-    required this.userId,
     required this.utentiApi,
     required this.dio,
     required this.authApi,
     required this.segnalazioniApi,
     required this.entiApi,
     required this.allegatiApi,
-    s,
   });
 
   @override
@@ -55,6 +52,15 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
   void initState() {
     super.initState();
     _loadEnti();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _titoloController.dispose();
+    _descrizioneController.dispose();
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> pickImage() async {
@@ -104,10 +110,8 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
       return;
     }
 
-    final dio = Dio();
-
     try {
-      final response = await dio.get(
+      final response = await widget.dio.get(
         'https://nominatim.openstreetmap.org/search',
         queryParameters: {
           'q': query,
@@ -140,8 +144,14 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
     if (_selectedEnteId == null) {
       _showErrorDialog("Seleziona un ente.");
+      return;
+    }
+
+    if (_selectedPosition == null) {
+      _showErrorDialog("Seleziona una posizione sulla mappa");
       return;
     }
 
@@ -160,7 +170,6 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
 
     try {
       final response = await widget.segnalazioniApi.createSegnalazione(
-        id: widget.userId,
         segnalazioneInput: input,
       );
 
@@ -269,11 +278,8 @@ class _CreaSegnalazionePageState extends State<CreaSegnalazionePage> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // Chiude il dialog
-              Navigator.pop(
-                context,
-                true,
-              ); // Torna alla Home e restituisce true
+              Navigator.pop(context);
+              Navigator.pop(context, true);
             },
             child: Text(
               "OK",

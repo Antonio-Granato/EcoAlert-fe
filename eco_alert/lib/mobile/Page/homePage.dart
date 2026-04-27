@@ -5,12 +5,12 @@ import 'package:openapi/openapi.dart';
 import 'package:dio/dio.dart';
 import 'dettaglioSegnalazionePage.dart';
 import 'welcomePage.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class HomePage extends StatefulWidget {
   final Dio dio;
   final UtentiApi utentiApi;
   final AuthApi authApi;
-  final int userId;
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
@@ -19,7 +19,6 @@ class HomePage extends StatefulWidget {
   const HomePage({
     super.key,
     required this.utentiApi,
-    required this.userId,
     required this.dio,
     required this.authApi,
     required this.segnalazioniApi,
@@ -52,8 +51,7 @@ class _HomePageState extends State<HomePage>
 
     _controller.forward();
 
-    futureReports = _loadReports();
-
+    futureReports = Future.value([]);
     _refreshReports();
   }
 
@@ -64,46 +62,31 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<List<SegnalazioneOutput>> _loadReports() async {
-    try {
-      final res = await widget.utentiApi.getSegnalazioniByUserId(
-        id: widget.userId,
-      );
+    final res = await widget.segnalazioniApi.getMySegnalazioni();
 
-      if (res.data == null || res.data!.isEmpty) {
-        error = Error(
-          (b) => b
-            ..code = 404
-            ..message = "Non hai ancora effettuato segnalazioni.",
-        );
-        return [];
-      }
-
-      error = null;
-      return res.data!.toList();
-    } catch (e) {
-      error = Error((b) => b..message = "Errore durante il caricamento");
+    if (res.data == null || res.data!.isEmpty) {
       return [];
     }
+
+    return res.data!.toList();
   }
 
-  Future<void> _refreshReports({bool initial = false}) async {
+  Future<void> _refreshReports() async {
     try {
-      final res = await widget.utentiApi.getSegnalazioniByUserId(
-        id: widget.userId,
-      );
+      final data = await _loadReports();
+
+      if (!mounted) return;
 
       setState(() {
-        futureReports = Future.value(res.data?.toList() ?? []);
+        futureReports = Future.value(data);
         error = null;
-        if (res.data == null || res.data!.isEmpty) {
-          error = Error(
-            (b) => b
-              ..code = 404
-              ..message = "Non hai ancora effettuato segnalazioni.",
-          );
-        }
       });
     } on DioException catch (ex) {
+      if (ex.response?.statusCode == 401) {
+        await _logout();
+        return;
+      }
+
       setState(() {
         error = Error(
           (b) => b
@@ -111,19 +94,20 @@ class _HomePageState extends State<HomePage>
             ..message =
                 (ex.response?.data as Map<String, dynamic>?)?['message']
                     ?.toString() ??
-                "Errore durante il caricamento delle segnalazioni",
+                "Errore durante il caricamento",
         );
-        futureReports = Future.value([]);
-      });
-    } catch (_) {
-      setState(() {
-        error = Error((b) => b..message = "Errore imprevisto. Riprova.");
         futureReports = Future.value([]);
       });
     }
   }
 
-  void _logout() {
+  final storage = const FlutterSecureStorage();
+
+  Future<void> _logout() async {
+    await storage.deleteAll();
+
+    if (!mounted) return;
+
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
@@ -158,7 +142,6 @@ class _HomePageState extends State<HomePage>
             MaterialPageRoute(
               builder: (_) => CreaSegnalazionePage(
                 utentiApi: widget.utentiApi,
-                userId: widget.userId,
                 dio: widget.dio,
                 authApi: widget.authApi,
                 segnalazioniApi: widget.segnalazioniApi,
@@ -246,7 +229,6 @@ class _HomePageState extends State<HomePage>
                               MaterialPageRoute(
                                 builder: (_) => profiloPage(
                                   utentiApi: widget.utentiApi,
-                                  userId: widget.userId,
                                   dio: widget.dio,
                                   authApi: widget.authApi,
                                   segnalazioniApi: widget.segnalazioniApi,
@@ -285,32 +267,6 @@ class _HomePageState extends State<HomePage>
                               child: CircularProgressIndicator(
                                 color: Colors.green,
                                 strokeWidth: 3,
-                              ),
-                            );
-                          }
-
-                          if (error != null && error!.code == 404) {
-                            return Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Icon(
-                                    Icons.info_outline,
-                                    size: 48,
-                                    color: Colors.white54,
-                                  ),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    "Non hai ancora effettuato segnalazioni",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontFamily: "Poppins",
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 18,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
                               ),
                             );
                           }
@@ -367,7 +323,6 @@ class _HomePageState extends State<HomePage>
                               child: _SegnalazioneCard(
                                 segnalazione: items[i],
                                 utentiApi: widget.utentiApi,
-                                userId: widget.userId,
                                 dio: widget.dio,
                                 authApi: widget.authApi,
                                 segnalazioniApi: widget.segnalazioniApi,
@@ -400,7 +355,6 @@ class _SegnalazioneCard extends StatelessWidget {
   final UtentiApi utentiApi;
   final AuthApi authApi;
   final Dio dio;
-  final int userId;
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
@@ -410,7 +364,6 @@ class _SegnalazioneCard extends StatelessWidget {
   const _SegnalazioneCard({
     required this.segnalazione,
     required this.utentiApi,
-    required this.userId,
     required this.dio,
     required this.authApi,
     required this.segnalazioniApi,
@@ -437,7 +390,6 @@ class _SegnalazioneCard extends StatelessWidget {
               MaterialPageRoute(
                 builder: (_) => DettaglioSegnalazionePage(
                   utentiApi: utentiApi,
-                  userId: userId,
                   segnalazioneId: s.id!,
                   dio: dio,
                   authApi: authApi,
