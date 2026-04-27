@@ -7,7 +7,6 @@ class profiloPage extends StatefulWidget {
   final Dio dio;
   final UtentiApi utentiApi;
   final AuthApi authApi;
-  final int userId;
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
   final CommentiApi commentiApi;
@@ -16,7 +15,6 @@ class profiloPage extends StatefulWidget {
   const profiloPage({
     super.key,
     required this.utentiApi,
-    required this.userId,
     required this.dio,
     required this.authApi,
     required this.segnalazioniApi,
@@ -40,10 +38,18 @@ class _profiloPageState extends State<profiloPage> {
 
   Future<UtenteDettaglioOutput?> _loadUser() async {
     try {
-      final res = await widget.utentiApi.getUserById(id: widget.userId);
+      final res = await widget.utentiApi.getMe();
       return res.data;
     } on DioException catch (e) {
       // Gestione 404 e 500 come errori critici
+
+      // JWT SCADUTO / NON VALIDO
+      if (e.response?.statusCode == 401) {
+        await _showErrorDialog("Sessione scaduta. Effettua di nuovo il login.");
+        _redirectToWelcome();
+        return null;
+      }
+
       if (e.response != null &&
           (e.response!.statusCode == 404 || e.response!.statusCode == 500)) {
         await _showErrorDialog(
@@ -213,7 +219,7 @@ class _profiloPageState extends State<profiloPage> {
 
   Future<void> _deleteUser() async {
     try {
-      await widget.utentiApi.deleteUser(id: widget.userId);
+      await widget.utentiApi.deleteUser();
 
       if (!mounted) return;
 
@@ -240,6 +246,14 @@ class _profiloPageState extends State<profiloPage> {
 
       _redirectToWelcome();
     } on DioException catch (e) {
+      final status = e.response?.statusCode;
+
+      if (status == 401) {
+        await _showErrorDialog("Sessione scaduta. Effettua di nuovo il login.");
+        _redirectToWelcome();
+        return;
+      }
+
       String message = "Errore durante l'eliminazione";
 
       if (e.response?.data is Map<String, dynamic>) {
@@ -288,7 +302,7 @@ class _profiloPageState extends State<profiloPage> {
             ],
           ),
         ),
-        // 🌟 Menu tre puntini
+        // Menu tre puntini
         PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert, color: Colors.white),
           onSelected: (value) {

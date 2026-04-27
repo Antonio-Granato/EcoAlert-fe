@@ -1,5 +1,5 @@
 import 'dart:math';
-
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'homePage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -43,6 +43,7 @@ class _LoginPageState extends State<LoginPage>
   late Animation<double> _fadeAnimation;
   final Random _random = Random();
   final List<_CircleData> _circles = [];
+  final storage = const FlutterSecureStorage();
 
   @override
   void initState() {
@@ -145,21 +146,34 @@ class _LoginPageState extends State<LoginPage>
         ),
       );
 
+      final token = response.data?.token;
       final ruolo = response.data?.ruolo;
 
-      if (!kIsWeb && ruolo != "cittadino") {
+      if (!kIsWeb && ruolo != "CITTADINO") {
         await _showErrorDialog(
           "Accesso negato: gli enti non possono accedere da mobile.",
         );
         return;
       }
 
+      //  SALVATAGGIO JWT
+      if (token != null) {
+        await storage.write(key: "jwt", value: token);
+        widget.dio.options.headers["Authorization"] = "Bearer $token";
+      }
+
+      if (token == null) {
+        await _showErrorDialog("Token non ricevuto dal server");
+        return;
+      }
+
+      if (!mounted) return;
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) => HomePage(
             utentiApi: widget.utentiApi,
-            userId: response.data!.userId!,
             dio: widget.dio,
             authApi: widget.authApi,
             segnalazioniApi: widget.segnalazioniApi,

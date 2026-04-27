@@ -54,8 +54,7 @@ class _DettaglioSegnalazioneWebPageState
   }
 
   Future<SegnalazioneOutput?> _load() async {
-    final res = await widget.utentiApi.getSegnalazioneById(
-      id: widget.userId,
+    final res = await widget.segnalazioniApi.getSegnalazioneById(
       idSegnalazione: widget.segnalazioneId,
     );
     return res.data;
@@ -80,7 +79,6 @@ class _DettaglioSegnalazioneWebPageState
     try {
       final input = CommentoInput((b) => b..descrizione = testo);
       await widget.commentiApi.createCommento(
-        id: widget.userId,
         idSegnalazione: widget.segnalazioneId,
         commentoInput: input,
       );
@@ -107,7 +105,6 @@ class _DettaglioSegnalazioneWebPageState
   Future<void> _deleteCommento(int idCommento) async {
     try {
       await widget.commentiApi.deleteCommento(
-        id: widget.userId, // se la tua API richiede userId
         idSegnalazione: widget.segnalazioneId,
         idCommento: idCommento,
       );

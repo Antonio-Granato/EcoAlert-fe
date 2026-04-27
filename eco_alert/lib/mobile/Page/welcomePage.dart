@@ -1,8 +1,10 @@
+import 'package:eco_alert/mobile/Page/homePage.dart';
 import 'package:flutter/material.dart';
 import 'loginPage.dart';
 import 'signInPage.dart';
 import 'package:openapi/openapi.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:math';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -36,6 +38,7 @@ class _WelcomePageState extends State<WelcomePage>
 
   final Random _random = Random();
   final List<_CircleData> _circles = [];
+  final storage = const FlutterSecureStorage();
 
   @override
   void initState() {
@@ -54,6 +57,8 @@ class _WelcomePageState extends State<WelcomePage>
     _controller.forward();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkLogin();
+
       final size = MediaQuery.of(context).size;
       for (int i = 0; i < 30; i++) {
         _circles.add(
@@ -69,6 +74,29 @@ class _WelcomePageState extends State<WelcomePage>
       }
       _animate();
     });
+  }
+
+  Future<void> _checkLogin() async {
+    final token = await storage.read(key: "jwt");
+
+    if (!mounted) return;
+
+    if (token != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => HomePage(
+            utentiApi: widget.utentiApi,
+            dio: widget.dio,
+            segnalazioniApi: widget.segnalazioniApi,
+            entiApi: widget.entiApi,
+            commentiApi: widget.commentiApi,
+            allegatiApi: widget.allegatiApi,
+            authApi: widget.authApi,
+          ),
+        ),
+      );
+    }
   }
 
   void _animate() {

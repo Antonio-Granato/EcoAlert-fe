@@ -11,7 +11,6 @@ class DettaglioSegnalazionePage extends StatefulWidget {
   final UtentiApi utentiApi;
   final AuthApi authApi;
   final Dio dio;
-  final int userId;
   final int segnalazioneId;
   final SegnalazioniApi segnalazioniApi;
   final EntiApi entiApi;
@@ -21,7 +20,6 @@ class DettaglioSegnalazionePage extends StatefulWidget {
   const DettaglioSegnalazionePage({
     super.key,
     required this.utentiApi,
-    required this.userId,
     required this.segnalazioneId,
     required this.dio,
     required this.authApi,
@@ -45,6 +43,7 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
       TextEditingController();
   final TextEditingController _editSearchController = TextEditingController();
   final MapController _editMapController = MapController();
+  Map<int, Uint8List> _cacheAllegati = {};
 
   LatLng? _editSelectedPosition;
   List<dynamic> _editSearchResults = [];
@@ -78,6 +77,10 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
   @override
   void dispose() {
     _editDebounce?.cancel();
+    _commentoController.dispose();
+    _editTitoloController.dispose();
+    _editDescrizioneController.dispose();
+    _editSearchController.dispose();
     super.dispose();
   }
 
@@ -93,7 +96,7 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
     }
 
     try {
-      final response = await Dio().get(
+      final response = await widget.dio.get(
         'https://nominatim.openstreetmap.org/search',
         queryParameters: {
           'q': q,
@@ -119,8 +122,7 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
 
   Future<SegnalazioneOutput?> _loadDettaglio() async {
     try {
-      final res = await widget.utentiApi.getSegnalazioneById(
-        id: widget.userId,
+      final res = await widget.segnalazioniApi.getSegnalazioneById(
         idSegnalazione: widget.segnalazioneId,
       );
 
@@ -134,6 +136,8 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
         });
         return null;
       }
+
+      if (!mounted) return null;
 
       setState(() => error = null);
       return res.data!;
@@ -278,7 +282,6 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
       final input = CommentoInput((b) => b..descrizione = testo);
 
       await widget.commentiApi.createCommento(
-        id: widget.userId,
         idSegnalazione: widget.segnalazioneId,
         commentoInput: input,
       );
@@ -298,7 +301,6 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
   Future<void> _deleteCommento(int idCommento) async {
     try {
       await widget.commentiApi.deleteCommento(
-        id: widget.userId,
         idSegnalazione: widget.segnalazioneId,
         idCommento: idCommento,
       );
@@ -483,7 +485,6 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
       );
 
       await widget.segnalazioniApi.updateSegnalazione(
-        id: widget.userId,
         idSegnalazione: widget.segnalazioneId,
         segnalazioneInput: input,
       );
@@ -545,7 +546,6 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
 
     try {
       await widget.segnalazioniApi.deleteSegnalazione(
-        id: widget.userId,
         idSegnalazione: widget.segnalazioneId,
       );
 
@@ -656,6 +656,9 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: allegati.map((a) {
+                if (_cacheAllegati.containsKey(a.id)) {
+                  return Image.memory(_cacheAllegati[a.id]!);
+                }
                 return FutureBuilder<Response<Uint8List?>>(
                   future: widget.allegatiApi.downloadAllegato(
                     idAllegato: a.id!,
@@ -791,14 +794,13 @@ class _DettaglioSegnalazionePageState extends State<DettaglioSegnalazionePage> {
                   ),
 
                   // DELETE: SOLO SE COMMENTO DELL'UTENTE LOGGATO
-                  if (c.idUtente == widget.userId)
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.redAccent),
-                        onPressed: () => _deleteCommento(c.id!),
-                      ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.redAccent),
+                      onPressed: () => _deleteCommento(c.id!),
                     ),
+                  ),
                 ],
               ),
             ),
